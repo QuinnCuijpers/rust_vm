@@ -25,8 +25,11 @@ pub(crate) enum AluSettings {
     Nor,
     And,
     Nand,
+    Implies,
+    Nimplies,
 }
 
+#[derive(Debug)]
 pub(crate) struct Alu {
     config: AluConfig,
     pub setting: AluSettings,
@@ -91,6 +94,20 @@ impl Alu {
                 flood_carry: false,
                 xor_to_or: true,
             },
+            AluSettings::Implies => AluConfig {
+                invert_a: true,
+                invert_b: false,
+                carry_in: false,
+                flood_carry: false,
+                xor_to_or: true,
+            },
+            AluSettings::Nimplies => AluConfig {
+                invert_a: true,
+                invert_b: false,
+                carry_in: false,
+                flood_carry: true,
+                xor_to_or: true,
+            },
         };
         Alu { config, setting }
     }
@@ -152,245 +169,4 @@ impl Alu {
 }
 
 #[cfg(test)]
-mod test {
-    use super::*;
-
-    fn bits_to_u8(bits: Bits<8>) -> u8 {
-        bits.into()
-    }
-
-    macro_rules! bits_8 {
-        ($num:expr) => {{
-            assert!(
-                $num <= 0xFF,
-                "bits_8! only accepts values fitting in 8 bits"
-            );
-            Bits::<8>::from($num as u8)
-        }};
-    }
-
-    macro_rules! assert_bits {
-        ($expr:expr, $expected:expr) => {
-            assert_eq!(format!("{:08b}", bits_to_u8($expr)), $expected);
-        };
-    }
-
-    #[test]
-    fn test_convert_bit() {
-        let a = 8u8;
-        let res = Bits::from(a);
-        let expected = Bits::<8>::from([false, false, false, true, false, false, false, false]);
-        assert_eq!(res, expected);
-    }
-
-    #[test]
-    fn test_addition() {
-        let alu = Alu::new(AluSettings::Add);
-        assert_bits!(alu.compute(bits_8!(0), bits_8!(0)), "00000000");
-        assert_bits!(alu.compute(bits_8!(1), bits_8!(1)), "00000010");
-        assert_bits!(alu.compute(bits_8!(2), bits_8!(3)), "00000101");
-        assert_bits!(alu.compute(bits_8!(15), bits_8!(16)), "00011111");
-    }
-
-    #[test]
-    fn test_subtraction() {
-        let alu = Alu::new(AluSettings::Sub);
-        assert_bits!(alu.compute(bits_8!(0), bits_8!(0)), "00000000");
-        assert_bits!(alu.compute(bits_8!(5), bits_8!(3)), "00000010");
-        assert_bits!(alu.compute(bits_8!(10), bits_8!(5)), "00000101");
-        assert_bits!(alu.compute(bits_8!(128), bits_8!(128)), "00000000");
-        assert_bits!(alu.compute(bits_8!(255), bits_8!(1)), "11111110");
-    }
-
-    #[test]
-    fn test_addition_edge_cases() {
-        let alu = Alu::new(AluSettings::Add);
-        assert_bits!(alu.compute(bits_8!(0), bits_8!(255)), "11111111");
-        assert_bits!(alu.compute(bits_8!(255), bits_8!(0)), "11111111");
-        assert_bits!(alu.compute(bits_8!(127), bits_8!(1)), "10000000");
-        assert_bits!(alu.compute(bits_8!(200), bits_8!(55)), "11111111");
-    }
-
-    #[test]
-    fn test_subtraction_edge_cases() {
-        let alu = Alu::new(AluSettings::Sub);
-        assert_bits!(alu.compute(bits_8!(255), bits_8!(255)), "00000000");
-        assert_bits!(alu.compute(bits_8!(1), bits_8!(255)), "00000010");
-        assert_bits!(alu.compute(bits_8!(98), bits_8!(100)), "11111110");
-        assert_bits!(alu.compute(bits_8!(0), bits_8!(255)), "00000001");
-    }
-
-    #[test]
-    fn test_xor() {
-        let alu = Alu::new(AluSettings::Xor);
-        assert_bits!(
-            alu.compute(bits_8!(0b00000000), bits_8!(0b00000000)),
-            "00000000"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00000001), bits_8!(0b00000001)),
-            "00000000"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00000010), bits_8!(0b00000011)),
-            "00000001"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00001111), bits_8!(0b00010000)),
-            "00011111"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b11111111), bits_8!(0b00000000)),
-            "11111111"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b10101010), bits_8!(0b01010101)),
-            "11111111"
-        );
-    }
-
-    #[test]
-    fn test_xnor() {
-        let alu = Alu::new(AluSettings::Xnor);
-        assert_bits!(
-            alu.compute(bits_8!(0b00000000), bits_8!(0b00000000)),
-            "11111111"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00000001), bits_8!(0b00000001)),
-            "11111111"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00000010), bits_8!(0b00000011)),
-            "11111110"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00001111), bits_8!(0b00010000)),
-            "11100000"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b11111111), bits_8!(0b00000000)),
-            "00000000"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b10101010), bits_8!(0b01010101)),
-            "00000000"
-        );
-    }
-
-    #[test]
-    fn test_or() {
-        let alu = Alu::new(AluSettings::Or);
-        assert_bits!(
-            alu.compute(bits_8!(0b00000000), bits_8!(0b00000000)),
-            "00000000"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00000001), bits_8!(0b00000001)),
-            "00000001"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00000010), bits_8!(0b00000011)),
-            "00000011"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00001111), bits_8!(0b00010000)),
-            "00011111"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b11111111), bits_8!(0b00000000)),
-            "11111111"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b10101010), bits_8!(0b01010101)),
-            "11111111"
-        );
-    }
-
-    #[test]
-    fn test_nor() {
-        let alu = Alu::new(AluSettings::Nor);
-        assert_bits!(
-            alu.compute(bits_8!(0b00000000), bits_8!(0b00000000)),
-            "11111111"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00000001), bits_8!(0b00000001)),
-            "11111110"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00000010), bits_8!(0b00000011)),
-            "11111100"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00001111), bits_8!(0b00010000)),
-            "11100000"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b11111111), bits_8!(0b00000000)),
-            "00000000"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b10101010), bits_8!(0b01010101)),
-            "00000000"
-        );
-    }
-
-    #[test]
-    fn test_and() {
-        let alu = Alu::new(AluSettings::And);
-        assert_bits!(
-            alu.compute(bits_8!(0b00000000), bits_8!(0b00000000)),
-            "00000000"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00000001), bits_8!(0b00000001)),
-            "00000001"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00000010), bits_8!(0b00000011)),
-            "00000010"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00001111), bits_8!(0b00010000)),
-            "00000000"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b11111111), bits_8!(0b00000000)),
-            "00000000"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b10101010), bits_8!(0b01010101)),
-            "00000000"
-        );
-    }
-
-    #[test]
-    fn test_nand() {
-        let alu = Alu::new(AluSettings::Nand);
-        assert_bits!(
-            alu.compute(bits_8!(0b00000000), bits_8!(0b00000000)),
-            "11111111"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00000001), bits_8!(0b00000001)),
-            "11111110"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00000010), bits_8!(0b00000011)),
-            "11111101"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b00001111), bits_8!(0b00010000)),
-            "11111111"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b11111111), bits_8!(0b00000000)),
-            "11111111"
-        );
-        assert_bits!(
-            alu.compute(bits_8!(0b10101010), bits_8!(0b01010101)),
-            "11111111"
-        );
-    }
-}
+mod tests;

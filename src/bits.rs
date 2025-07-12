@@ -95,3 +95,6 @@ impl<const N: usize> Index<usize> for Bits<N> {
         &self.bit_array[index]
     }
 }
+
+#[cfg(test)]
+mod tests;

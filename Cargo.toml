@@ -2,5 +2,8 @@
 name = "rust_vm"
 version = "0.1.0"
 edition = "2021"
+authors = ["Quinn Cuijpers <Quinn.Cuijpers@gmail.com>"]
+license = "MIT"
+description = "A Rust-based virtual machine for educational purposes"
 
 [dependencies]
