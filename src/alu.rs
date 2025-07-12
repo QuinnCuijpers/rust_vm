@@ -1,4 +1,4 @@
-use crate::Bits;
+use crate::bits::Bits;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Signal {

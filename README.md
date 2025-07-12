@@ -2,10 +2,9 @@
 
 This project implements a simple virtual machine in Rust, inspired by [mattbattwings' Minecraft Redstone Computer](https://www.youtube.com/watch?v=osFa7nwHHz4&list=PL5LiOvrbVo8nPTtdXAdSmDWzu85zzdgRT).
 
-## Architecture
+## Arithmetic Logic Unit (ALU)
 
-- **ALU (Arithmetic Logic Unit):**  
-    Performs operations on 8-bit values using a custom `Bits` struct.
+Performs operations on 8-bit values using a custom `Bits` struct that represents bits as an array of booleans. The ALU is designed as a **carry cancel adder (cca)**.
 
 ### Supported ALU Operations
 
@@ -21,6 +20,8 @@ This project implements a simple virtual machine in Rust, inspired by [mattbattw
 | Bitwise NAND   | `~(a & b)`         |
 | Bitwise NOR    | `~(a \| b)`        |
 
-> The ALU is designed as a **bitwise carry cancel adder**.
-
 ---
+
+
+# License
+This project is licensed under the MIT License. See the [license](license.txt) file for details.
