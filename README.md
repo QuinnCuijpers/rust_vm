@@ -22,6 +22,9 @@ Performs operations on 8-bit values using a custom `Bits` struct that represents
 
 ---
 
+## Register
+A simple registerbank implementation using 16 simulated dual-read registers. The register supports basic operations such as reading and writing values.
+
 
 # License
 This project is licensed under the MIT License. See the [license](license.txt) file for details.

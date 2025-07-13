@@ -1,3 +1,4 @@
+use core::error;
 use std::{ops::Index, str::FromStr};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -10,6 +11,21 @@ pub enum BitsParseError {
     InvalidLength { expected: usize, found: usize },
     InvalidCharacter { character: char },
 }
+
+impl std::fmt::Display for BitsParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BitsParseError::InvalidLength { expected, found } => {
+                write!(f, "Invalid length: expected {}, found {}", expected, found)
+            }
+            BitsParseError::InvalidCharacter { character } => {
+                write!(f, "Invalid character: '{}'", character)
+            }
+        }
+    }
+}
+
+impl error::Error for BitsParseError {}
 
 impl<const N: usize> Default for Bits<N> {
     fn default() -> Self {
