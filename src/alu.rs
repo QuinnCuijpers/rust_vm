@@ -13,6 +13,7 @@ pub(crate) struct AluConfig {
     carry_in: bool,
     flood_carry: bool,
     xor_to_or: bool,
+    is_rshift: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -27,6 +28,7 @@ pub(crate) enum AluSettings {
     Nand,
     Implies,
     Nimplies,
+    Rshift,
 }
 
 #[derive(Debug)]
@@ -44,6 +46,7 @@ impl Alu {
                 carry_in: false,
                 flood_carry: false,
                 xor_to_or: false,
+                is_rshift: false,
             },
             AluSettings::Sub => AluConfig {
                 invert_a: false,
@@ -51,6 +54,7 @@ impl Alu {
                 carry_in: true,
                 flood_carry: false,
                 xor_to_or: false,
+                is_rshift: false,
             },
             AluSettings::Xor => AluConfig {
                 invert_a: false,
@@ -58,6 +62,7 @@ impl Alu {
                 carry_in: false,
                 flood_carry: true,
                 xor_to_or: false,
+                is_rshift: false,
             },
             AluSettings::Xnor => AluConfig {
                 invert_a: false,
@@ -65,6 +70,7 @@ impl Alu {
                 carry_in: false,
                 flood_carry: true,
                 xor_to_or: false,
+                is_rshift: false,
             },
             AluSettings::Or => AluConfig {
                 invert_a: false,
@@ -72,6 +78,7 @@ impl Alu {
                 carry_in: false,
                 flood_carry: false,
                 xor_to_or: true,
+                is_rshift: false,
             },
             AluSettings::Nor => AluConfig {
                 invert_a: false,
@@ -79,6 +86,7 @@ impl Alu {
                 carry_in: false,
                 flood_carry: true,
                 xor_to_or: true,
+                is_rshift: false,
             },
             AluSettings::And => AluConfig {
                 invert_a: true,
@@ -86,6 +94,7 @@ impl Alu {
                 carry_in: false,
                 flood_carry: true,
                 xor_to_or: true,
+                is_rshift: false,
             },
             AluSettings::Nand => AluConfig {
                 invert_a: true,
@@ -93,6 +102,7 @@ impl Alu {
                 carry_in: false,
                 flood_carry: false,
                 xor_to_or: true,
+                is_rshift: false,
             },
             AluSettings::Implies => AluConfig {
                 invert_a: true,
@@ -100,6 +110,7 @@ impl Alu {
                 carry_in: false,
                 flood_carry: false,
                 xor_to_or: true,
+                is_rshift: false,
             },
             AluSettings::Nimplies => AluConfig {
                 invert_a: true,
@@ -107,6 +118,15 @@ impl Alu {
                 carry_in: false,
                 flood_carry: true,
                 xor_to_or: true,
+                is_rshift: false,
+            },
+            AluSettings::Rshift => AluConfig {
+                invert_a: false,
+                invert_b: false,
+                carry_in: false,
+                flood_carry: false,
+                xor_to_or: false,
+                is_rshift: true,
             },
         };
         Alu { config, setting }
@@ -115,6 +135,15 @@ impl Alu {
     pub(crate) fn compute(&self, mut a: Bits<8>, mut b: Bits<8>) -> Bits<8> {
         const CARRY_LENGTH: usize = 9;
         let config = self.config;
+
+        if config.is_rshift {
+            let mut res = [false; 8];
+            for i in 0..7 {
+                res[i] = b[i + 1]; // right shift returns b shifted right by 1
+            }
+            res[7] = false;
+            return Bits::from(res);
+        }
 
         if config.invert_b {
             b.iter_mut().for_each(|bit| *bit = !*bit);

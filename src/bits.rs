@@ -1,8 +1,49 @@
-use std::ops::Index;
+use std::{ops::Index, str::FromStr};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Bits<const N: usize> {
-    pub bit_array: [bool; N],
+    pub(crate) bit_array: [bool; N],
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BitsParseError {
+    InvalidLength { expected: usize, found: usize },
+    InvalidCharacter { character: char },
+}
+
+impl<const N: usize> Default for Bits<N> {
+    fn default() -> Self {
+        Bits {
+            bit_array: [false; N],
+        }
+    }
+}
+
+impl<const N: usize> FromStr for Bits<N> {
+    /// Parses a string of '0's and '1's into a Bits instance.
+    type Err = BitsParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() != N {
+            return Err(BitsParseError::InvalidLength {
+                expected: N,
+                found: s.len(),
+            });
+        }
+        let mut bits = [false; N];
+        for (i, c) in s.as_bytes().iter().enumerate() {
+            bits[i] = match c {
+                b'0' => false,
+                b'1' => true,
+                _ => {
+                    return Err(BitsParseError::InvalidCharacter {
+                        character: c.to_owned() as char,
+                    })
+                }
+            };
+        }
+        Ok(Bits { bit_array: bits })
+    }
 }
 
 impl<const N: usize> Bits<N> {
