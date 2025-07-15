@@ -22,3 +22,9 @@ fn test_clone() {
     let bits2 = bits1.clone();
     assert_eq!(bits1.bit_array, bits2.bit_array);
 }
+
+#[test]
+fn test_display() {
+    let bits = Bits::from(13u8);
+    assert_eq!(format!("{:0>8b}", 13), bits.to_string())
+}

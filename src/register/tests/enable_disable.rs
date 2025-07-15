@@ -4,9 +4,9 @@ fn test_disable_resets_read_values() {
     let mut reg_file = RegisterFile::default();
     reg_file.enable();
 
-    reg_file.schedule_write(2, Bits::from(4u8));
+    reg_file.schedule_write(Bits::from(2u8).resize(), Bits::from(4u8).resize());
     reg_file.clock();
-    reg_file.set_read_addresses([2, 2]);
+    reg_file.set_read_addresses([Bits::from(2u8).resize(), Bits::from(2u8).resize()]);
 
     reg_file.disable();
 
@@ -19,9 +19,10 @@ fn test_enable_restores_read_values() {
     let mut reg_file = RegisterFile::default();
     reg_file.enable();
 
-    reg_file.schedule_write(2, Bits::from(4u8));
+    reg_file.schedule_write(Bits::from(2u8).resize(), Bits::from(4u8).resize());
     reg_file.clock();
-    reg_file.set_read_addresses([2, 2]);
+    reg_file.set_read_addresses([Bits::from(2).resize(), Bits::from(2).resize()]);
+    dbg!(reg_file.read_outputs);
     reg_file.disable();
 
     reg_file.enable();

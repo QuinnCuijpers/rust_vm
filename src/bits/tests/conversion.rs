@@ -1,6 +1,13 @@
 use super::super::*;
 
 #[test]
+fn test_to_usize() {
+    let a = Bits::from(164u16);
+    let b = 164usize;
+    assert_eq!(a.to_usize(), b);
+}
+
+#[test]
 fn test_u8_conversion() {
     let bits = Bits::<8>::from(0b1010_1010u8);
     assert_eq!(

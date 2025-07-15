@@ -21,7 +21,7 @@ impl std::fmt::Display for ParserError {
 
 impl std::error::Error for ParserError {}
 
-fn parse_program(file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub(crate) fn parse_program(file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     use std::path::Path;
 
     let mut output_lines = vec![];
@@ -67,7 +67,7 @@ fn parse_program(file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
             out.push(b_bits.to_string());
             out.push(write_bits.to_string());
         }
-        output_lines.push(out.join(""));
+        output_lines.push(out.join(" "));
     }
 
     use std::io::Write;

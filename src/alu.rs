@@ -6,7 +6,7 @@ enum Signal {
     Generate,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub(crate) struct AluConfig {
     invert_a: bool,
     invert_b: bool,
@@ -16,8 +16,9 @@ pub(crate) struct AluConfig {
     is_rshift: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub(crate) enum AluSettings {
+    #[default]
     Add,
     Sub,
     Xor,
@@ -31,15 +32,9 @@ pub(crate) enum AluSettings {
     Rshift,
 }
 
-#[derive(Debug)]
-pub(crate) struct Alu {
-    config: AluConfig,
-    pub setting: AluSettings,
-}
-
-impl Alu {
-    pub(crate) fn new(setting: AluSettings) -> Self {
-        let config = match setting {
+impl AluSettings {
+    pub(crate) fn config(&self, setting: AluSettings) -> AluConfig {
+        match setting {
             AluSettings::Add => AluConfig {
                 invert_a: false,
                 invert_b: false,
@@ -128,8 +123,32 @@ impl Alu {
                 xor_to_or: false,
                 is_rshift: true,
             },
-        };
-        Alu { config, setting }
+        }
+    }
+
+    pub(crate) fn from_bits(bits: Bits<4>) -> Self {
+        match bits.to_string().as_str() {
+            "0010" => AluSettings::Add,
+            "0011" => AluSettings::Sub,
+            "0100" => AluSettings::And,
+            "0101" => AluSettings::Nor,
+            "0110" => AluSettings::Xor,
+            "0111" => AluSettings::Rshift,
+            _ => panic!("Not yet implemented"),
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct Alu {
+    config: AluConfig,
+    pub setting: AluSettings,
+}
+
+impl Alu {
+    pub(crate) fn new(setting: AluSettings) -> Self {
+        let config = setting.config(setting);
+        Self { config, setting }
     }
 
     pub(crate) fn compute(&self, mut a: Bits<8>, mut b: Bits<8>) -> Bits<8> {
@@ -194,6 +213,11 @@ impl Alu {
             }
         }
         Bits::from(res)
+    }
+
+    pub(crate) fn set_setting(&mut self, setting: AluSettings) {
+        self.setting = setting;
+        self.config = setting.config(setting);
     }
 }
 

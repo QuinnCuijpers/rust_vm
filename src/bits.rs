@@ -1,5 +1,8 @@
 use core::error;
-use std::{ops::Index, str::FromStr};
+use std::{
+    ops::{Index, Range},
+    str::FromStr,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BitsParseError {
@@ -24,9 +27,77 @@ impl std::fmt::Display for BitsParseError {
 
 impl error::Error for BitsParseError {}
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Eq)]
 pub(crate) struct Bits<const N: usize> {
     pub(crate) bit_array: [bool; N],
+}
+
+impl<const N: usize> Bits<N> {
+    pub(crate) fn iter(&self) -> std::slice::Iter<'_, bool> {
+        self.bit_array.iter()
+    }
+
+    pub(crate) fn iter_mut(&mut self) -> std::slice::IterMut<'_, bool> {
+        self.bit_array.iter_mut()
+    }
+
+    pub(crate) fn len(&self) -> usize {
+        N
+    }
+
+    pub(crate) fn to_bytes(self) -> Vec<u8> {
+        self.bit_array
+            .iter()
+            .map(|&b| if b { 1 } else { 0 })
+            .rev()
+            .collect()
+    }
+
+    pub(crate) fn to_usize(self) -> usize {
+        self.bit_array
+            .iter()
+            .enumerate()
+            .fold(0, |acc, (i, &b)| acc | ((b as usize) << i))
+    }
+
+    pub fn try_from_unsigned_number<T>(value: T) -> Result<Self, &'static str>
+    where
+        T: Into<u64> + Copy,
+    {
+        let val_u64: u64 = value.into();
+
+        if val_u64 >= (1u64 << N) {
+            return Err("Value does not fit into Bits<N>");
+        }
+
+        let mut res = [false; N];
+        res.iter_mut()
+            .enumerate()
+            .for_each(|(i, b)| *b = (val_u64 & (1 << i)) != 0);
+
+        Ok(Bits { bit_array: res })
+    }
+
+    pub fn resize<const M: usize>(self) -> Bits<M> {
+        let mut out = [false; M];
+        let min_len = N.min(M);
+        (0..min_len).for_each(|i| {
+            out[i] = self.bit_array[i];
+        });
+        Bits { bit_array: out }
+    }
+
+    pub(crate) fn to_chunks<const CHUNK_SIZE: usize>(self) -> Vec<Bits<CHUNK_SIZE>> {
+        assert!(N % CHUNK_SIZE == 0, "Size must divide N evenly");
+        let mut chunks = Vec::new();
+        for chunk in self.bit_array.chunks(CHUNK_SIZE) {
+            let mut bits = [false; CHUNK_SIZE];
+            bits[..chunk.len()].copy_from_slice(chunk);
+            chunks.push(Bits { bit_array: bits });
+        }
+        chunks.reverse();
+        chunks
+    }
 }
 
 impl<const N: usize> Default for Bits<N> {
@@ -88,28 +159,6 @@ impl<const N: usize> FromStr for Bits<N> {
     }
 }
 
-impl<const N: usize> Bits<N> {
-    pub(crate) fn iter(&self) -> std::slice::Iter<'_, bool> {
-        self.bit_array.iter()
-    }
-
-    pub(crate) fn iter_mut(&mut self) -> std::slice::IterMut<'_, bool> {
-        self.bit_array.iter_mut()
-    }
-
-    pub(crate) fn len(&self) -> usize {
-        N
-    }
-
-    pub(crate) fn to_bytes(self) -> Vec<u8> {
-        self.bit_array
-            .iter()
-            .map(|&b| if b { 1 } else { 0 })
-            .rev()
-            .collect()
-    }
-}
-
 impl<const N: usize> std::fmt::Display for Bits<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for &bit in self.bit_array.iter().rev() {
@@ -120,21 +169,24 @@ impl<const N: usize> std::fmt::Display for Bits<N> {
 }
 
 macro_rules! impl_bits_from {
-    ($ty:ty) => {
-        impl From<$ty> for Bits<{ std::mem::size_of::<$ty>() * 8 }> {
-            fn from(value: $ty) -> Self {
-                let mut res = [false; std::mem::size_of::<$ty>() * 8];
+    ($($t:ty), *) => {
+        $(
+        impl From<$t> for Bits<{ std::mem::size_of::<$t>() * 8 }> {
+            fn from(value: $t) -> Self {
+                let mut res = [false; std::mem::size_of::<$t>() * 8];
                 for (i, bit) in res.iter_mut().enumerate() {
                     *bit = (value >> i) & 1 != 0;
                 }
                 Bits { bit_array: res }
             }
         }
+    )*
     };
 }
 
 macro_rules! impl_from_bits {
-    ($ty:ty) => {
+    ($($ty:ty), *) => {
+        $(
         impl From<Bits<{ std::mem::size_of::<$ty>() * 8 }>> for $ty {
             fn from(bits: Bits<{ std::mem::size_of::<$ty>() * 8 }>) -> Self {
                 bits.bit_array
@@ -143,57 +195,30 @@ macro_rules! impl_from_bits {
                     .fold(0, |acc, (i, &b)| acc | ((b as $ty) << i))
             }
         }
+    )*
     };
 }
 
 macro_rules! impl_from_ref_bits {
-    ($ty:ty) => {
-        impl From<&Bits<{ std::mem::size_of::<$ty>() * 8 }>> for $ty {
-            fn from(bits: &Bits<{ std::mem::size_of::<$ty>() * 8 }>) -> Self {
+    ($($t:ty),*) => {
+        $(
+        impl From<&Bits<{ std::mem::size_of::<$t>() * 8 }>> for $t {
+            fn from(bits: &Bits<{ std::mem::size_of::<$t>() * 8 }>) -> Self {
                 bits.bit_array
                     .iter()
                     .enumerate()
-                    .fold(0, |acc, (i, &b)| acc | ((b as $ty) << i))
+                    .fold(0, |acc, (i, &b)| acc | ((b as $t) << i))
             }
         }
+    )*
     };
 }
 
-impl_bits_from!(u8);
-impl_bits_from!(u16);
-impl_bits_from!(u32);
-impl_bits_from!(u64);
-impl_bits_from!(usize);
+impl_bits_from!(u8, u16, u32, u64, usize, i8, i16, i32, i64, isize);
 
-impl_from_bits!(u8);
-impl_from_bits!(u16);
-impl_from_bits!(u32);
-impl_from_bits!(u64);
-impl_from_bits!(usize);
+impl_from_bits!(i8, i16, i32, i64, isize, u8, u16, u32, u64, usize);
 
-impl_bits_from!(i8);
-impl_bits_from!(i16);
-impl_bits_from!(i32);
-impl_bits_from!(i64);
-impl_bits_from!(isize);
-
-impl_from_bits!(i8);
-impl_from_bits!(i16);
-impl_from_bits!(i32);
-impl_from_bits!(i64);
-impl_from_bits!(isize);
-
-impl_from_ref_bits!(i8);
-impl_from_ref_bits!(i16);
-impl_from_ref_bits!(i32);
-impl_from_ref_bits!(i64);
-impl_from_ref_bits!(isize);
-
-impl_from_ref_bits!(u8);
-impl_from_ref_bits!(u16);
-impl_from_ref_bits!(u32);
-impl_from_ref_bits!(u64);
-impl_from_ref_bits!(usize);
+impl_from_ref_bits!(i8, i16, i32, i64, isize, u8, u16, u32, u64, usize);
 
 impl<const N: usize> From<[bool; N]> for Bits<N> {
     fn from(value: [bool; N]) -> Self {
@@ -222,6 +247,20 @@ impl<const N: usize> Index<usize> for Bits<N> {
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.bit_array[index]
+    }
+}
+
+impl<const N: usize> Index<Range<usize>> for Bits<N> {
+    type Output = [bool];
+
+    fn index(&self, index: Range<usize>) -> &Self::Output {
+        &self.bit_array[index]
+    }
+}
+
+impl<const N: usize, const L: usize> PartialEq<Bits<L>> for Bits<N> {
+    fn eq(&self, other: &Bits<L>) -> bool {
+        self.to_usize() == other.to_usize()
     }
 }
 
