@@ -1,8 +1,8 @@
+#![allow(dead_code)]
 use crate::alu::Alu;
-
-#[allow(dead_code)]
 mod alu;
 mod bits;
+mod parser;
 mod register;
 
 #[derive(Debug)]

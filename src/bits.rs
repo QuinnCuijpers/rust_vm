@@ -1,31 +1,33 @@
 use core::error;
 use std::{ops::Index, str::FromStr};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct Bits<const N: usize> {
-    pub(crate) bit_array: [bool; N],
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BitsParseError {
-    InvalidLength { expected: usize, found: usize },
-    InvalidCharacter { character: char },
+    Length { expected: usize, found: usize },
+    Character { character: char },
+    Number { source: std::num::ParseIntError },
 }
 
 impl std::fmt::Display for BitsParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            BitsParseError::InvalidLength { expected, found } => {
+            BitsParseError::Length { expected, found } => {
                 write!(f, "Invalid length: expected {}, found {}", expected, found)
             }
-            BitsParseError::InvalidCharacter { character } => {
+            BitsParseError::Character { character } => {
                 write!(f, "Invalid character: '{}'", character)
             }
+            BitsParseError::Number { source } => write!(f, "Invalid number: {}", source),
         }
     }
 }
 
 impl error::Error for BitsParseError {}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct Bits<const N: usize> {
+    pub(crate) bit_array: [bool; N],
+}
 
 impl<const N: usize> Default for Bits<N> {
     fn default() -> Self {
@@ -40,24 +42,48 @@ impl<const N: usize> FromStr for Bits<N> {
     type Err = BitsParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.len() != N {
-            return Err(BitsParseError::InvalidLength {
-                expected: N,
-                found: s.len(),
-            });
-        }
         let mut bits = [false; N];
-        for (i, c) in s.as_bytes().iter().enumerate() {
-            bits[i] = match c {
-                b'0' => false,
-                b'1' => true,
-                _ => {
-                    return Err(BitsParseError::InvalidCharacter {
-                        character: c.to_owned() as char,
-                    })
+
+        match s.len() {
+            len if len > N => {
+                return Err(BitsParseError::Length {
+                    expected: N,
+                    found: len,
+                });
+            }
+            len if len < N => {
+                let num = s
+                    .parse::<u64>()
+                    .map_err(|e| BitsParseError::Number { source: e })?;
+
+                if num >= (1 << N) {
+                    //TODO: improve this error message
+                    return Err(BitsParseError::Length {
+                        expected: N,
+                        found: len,
+                    });
                 }
-            };
+
+                bits.iter_mut().enumerate().for_each(|(i, b)| {
+                    *b = (num & (1 << i)) != 0;
+                });
+            }
+            len if len == N => {
+                for (i, c) in s.as_bytes().iter().rev().enumerate() {
+                    bits[i] = match c {
+                        b'0' => false,
+                        b'1' => true,
+                        _ => {
+                            return Err(BitsParseError::Character {
+                                character: *c as char,
+                            })
+                        }
+                    };
+                }
+            }
+            _ => unreachable!(), // This should never happen
         }
+
         Ok(Bits { bit_array: bits })
     }
 }
@@ -69,6 +95,27 @@ impl<const N: usize> Bits<N> {
 
     pub(crate) fn iter_mut(&mut self) -> std::slice::IterMut<'_, bool> {
         self.bit_array.iter_mut()
+    }
+
+    pub(crate) fn len(&self) -> usize {
+        N
+    }
+
+    pub(crate) fn to_bytes(self) -> Vec<u8> {
+        self.bit_array
+            .iter()
+            .map(|&b| if b { 1 } else { 0 })
+            .rev()
+            .collect()
+    }
+}
+
+impl<const N: usize> std::fmt::Display for Bits<N> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for &bit in self.bit_array.iter().rev() {
+            write!(f, "{}", if bit { '1' } else { '0' })?;
+        }
+        Ok(())
     }
 }
 
@@ -90,6 +137,19 @@ macro_rules! impl_from_bits {
     ($ty:ty) => {
         impl From<Bits<{ std::mem::size_of::<$ty>() * 8 }>> for $ty {
             fn from(bits: Bits<{ std::mem::size_of::<$ty>() * 8 }>) -> Self {
+                bits.bit_array
+                    .iter()
+                    .enumerate()
+                    .fold(0, |acc, (i, &b)| acc | ((b as $ty) << i))
+            }
+        }
+    };
+}
+
+macro_rules! impl_from_ref_bits {
+    ($ty:ty) => {
+        impl From<&Bits<{ std::mem::size_of::<$ty>() * 8 }>> for $ty {
+            fn from(bits: &Bits<{ std::mem::size_of::<$ty>() * 8 }>) -> Self {
                 bits.bit_array
                     .iter()
                     .enumerate()
@@ -122,6 +182,18 @@ impl_from_bits!(i16);
 impl_from_bits!(i32);
 impl_from_bits!(i64);
 impl_from_bits!(isize);
+
+impl_from_ref_bits!(i8);
+impl_from_ref_bits!(i16);
+impl_from_ref_bits!(i32);
+impl_from_ref_bits!(i64);
+impl_from_ref_bits!(isize);
+
+impl_from_ref_bits!(u8);
+impl_from_ref_bits!(u16);
+impl_from_ref_bits!(u32);
+impl_from_ref_bits!(u64);
+impl_from_ref_bits!(usize);
 
 impl<const N: usize> From<[bool; N]> for Bits<N> {
     fn from(value: [bool; N]) -> Self {
