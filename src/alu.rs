@@ -16,7 +16,7 @@ pub(crate) struct AluConfig {
     is_rshift: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Default, Eq)]
 pub(crate) enum AluSettings {
     #[default]
     Add,
@@ -125,18 +125,6 @@ impl AluSettings {
             },
         }
     }
-
-    pub(crate) fn from_bits(bits: Bits<4>) -> Self {
-        match bits.to_string().as_str() {
-            "0010" => AluSettings::Add,
-            "0011" => AluSettings::Sub,
-            "0100" => AluSettings::And,
-            "0101" => AluSettings::Nor,
-            "0110" => AluSettings::Xor,
-            "0111" => AluSettings::Rshift,
-            _ => panic!("Not yet implemented"),
-        }
-    }
 }
 
 #[derive(Debug, Default)]
@@ -158,7 +146,7 @@ impl Alu {
         if config.is_rshift {
             let mut res = [false; 8];
             for i in 0..7 {
-                res[i] = b[i + 1]; // right shift returns b shifted right by 1
+                res[i] = a[i + 1]; // right shift returns a shifted right by 1
             }
             res[7] = false;
             return Bits::from(res);

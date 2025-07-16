@@ -1,0 +1,4 @@
+ADD r1 r2 r3
+ADD r2 r3 r4
+NOP
+SUB r4 r0 r1

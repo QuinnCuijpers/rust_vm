@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::{fs, str::FromStr};
 
 use crate::bits::Bits;
@@ -21,51 +22,100 @@ impl std::fmt::Display for ParserError {
 
 impl std::error::Error for ParserError {}
 
-pub(crate) fn parse_program(file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
-    use std::path::Path;
+// TODO: add proper error
+fn parse_register_string(s: &str) -> Result<Bits<4>, Box<dyn std::error::Error>> {
+    if s.len() < 2 || !s.starts_with('r') {
+        return Err(Box::new(ParserError::InvalidInstruction(s.to_string())));
+    }
+    Ok(Bits::from_str(&s[1..])?)
+}
 
+pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<(), Box<dyn std::error::Error>> {
     let mut output_lines = vec![];
 
-    let path = Path::new(file_path);
+    let path = file_path.as_ref();
     let content = std::fs::read_to_string(path)
-        .map_err(|_| ParserError::FileNotFound(file_path.to_string()))?;
+        .map_err(|_| ParserError::FileNotFound(path.display().to_string()))?;
     let lines = content.lines();
 
     for line in lines {
         let mut out = vec![];
-        let splitted = line.split_whitespace().collect::<Vec<&str>>();
-        if splitted.is_empty() {
-            continue; // Skip empty lines
-        }
-        if splitted.len() < 2 {
-            return Err(Box::new(ParserError::MissingOperand(line.to_string())));
-        }
-        let instruction = splitted[0];
-        let operands = &splitted[1..];
-        let instruction_bits = parse_instruction(instruction)?;
-        out.push(instruction_bits.to_string());
-        if instruction == "RSH" {
-            if operands.len() != 2 {
-                return Err(Box::new(ParserError::MissingOperand(line.to_string())));
+        let mut splitted = line.split_whitespace();
+        let instruction = match splitted.next() {
+            Some(instr) => instr,
+            None => continue, // Skip empty lines
+        };
+        let mut operands = splitted;
+        match instruction {
+            "NOP" => {
+                let instruction_bits = parse_instruction(instruction)?;
+                out.push(instruction_bits.to_string());
+                out.push("0000 0000 0000".to_string()); // NOP has no operands and is parsed as all zeros
+                if operands.next().is_some() {
+                    return Err(Box::new(ParserError::MissingOperand(line.to_string())));
+                }
             }
-            let a = &operands[0][1..]; // skip first character 'r'
-            let write_address = &operands[1][1..]; // skip first character 'r'
-            let a_bits: Bits<4> = Bits::from_str(a).unwrap();
-            let b_bits: Bits<4> = Bits::from_str("0000").unwrap(); // RSH does not use a second operand
-            let write_address_bits: Bits<4> = Bits::from_str(write_address).unwrap();
-            out.push(a_bits.to_string());
-            out.push(b_bits.to_string());
-            out.push(write_address_bits.to_string());
-        } else {
-            let a = &operands[0][1..]; // skip first character 'r'
-            let b = &operands[1][1..]; // skip first character 'r
-            let write = &operands[2][1..]; // skip first character 'r'
-            let a_bits: Bits<4> = Bits::from_str(a).unwrap();
-            let b_bits: Bits<4> = Bits::from_str(b).unwrap();
-            let write_bits: Bits<4> = Bits::from_str(write).unwrap();
-            out.push(a_bits.to_string());
-            out.push(b_bits.to_string());
-            out.push(write_bits.to_string());
+            "ADD" | "SUB" | "AND" | "NOR" | "XOR" => {
+                let a = match operands.next() {
+                    Some(op) => op,
+                    None => return Err(Box::new(ParserError::MissingOperand(line.to_string()))),
+                };
+                let b = match operands.next() {
+                    Some(op) => op,
+                    None => return Err(Box::new(ParserError::MissingOperand(line.to_string()))),
+                };
+                let write = match operands.next() {
+                    Some(op) => op,
+                    None => return Err(Box::new(ParserError::MissingOperand(line.to_string()))),
+                };
+                if operands.next().is_some() {
+                    return Err(Box::new(ParserError::MissingOperand(line.to_string())));
+                }
+                out.push(parse_instruction(instruction)?.to_string());
+                out.push(parse_register_string(a)?.to_string());
+                out.push(parse_register_string(b)?.to_string());
+                out.push(parse_register_string(write)?.to_string());
+            }
+            "LDI" => {
+                let a = match operands.next() {
+                    Some(op) => op,
+                    None => return Err(Box::new(ParserError::MissingOperand(line.to_string()))),
+                };
+                let values = match operands.next() {
+                    Some(op) => Bits::<8>::from_str(op)?.split_into_chunks::<4>(),
+                    None => return Err(Box::new(ParserError::MissingOperand(line.to_string()))),
+                };
+                if operands.next().is_some() {
+                    return Err(Box::new(ParserError::MissingOperand(line.to_string())));
+                }
+                out.push(parse_instruction(instruction)?.to_string());
+                out.push(parse_register_string(a)?.to_string());
+                for value in values {
+                    out.push(value.to_string());
+                }
+            }
+            "RSH" => {
+                let a = match operands.next() {
+                    Some(op) => op,
+                    None => return Err(Box::new(ParserError::MissingOperand(line.to_string()))),
+                };
+                let write = match operands.next() {
+                    Some(op) => op,
+                    None => return Err(Box::new(ParserError::MissingOperand(line.to_string()))),
+                };
+                if operands.next().is_some() {
+                    return Err(Box::new(ParserError::MissingOperand(line.to_string())));
+                }
+                out.push(parse_instruction(instruction)?.to_string());
+                out.push(parse_register_string(a)?.to_string());
+                out.push("0000".to_string()); // RSH has no second operand
+                out.push(parse_register_string(write)?.to_string());
+            }
+            _ => {
+                return Err(Box::new(ParserError::InvalidInstruction(
+                    instruction.to_string(),
+                )))
+            }
         }
         output_lines.push(out.join(" "));
     }
@@ -81,12 +131,14 @@ pub(crate) fn parse_program(file_path: &str) -> Result<(), Box<dyn std::error::E
 
 fn parse_instruction(instruction: &str) -> Result<Bits<4>, Box<dyn std::error::Error>> {
     let instruction_bits: Bits<4> = match instruction {
+        "NOP" => Bits::from_str("0000")?,
         "ADD" => Bits::from_str("0010")?,
         "SUB" => Bits::from_str("0011")?,
         "AND" => Bits::from_str("0100")?,
         "NOR" => Bits::from_str("0101")?,
         "XOR" => Bits::from_str("0110")?,
         "RSH" => Bits::from_str("0111")?,
+        "LDI" => Bits::from_str("1000")?,
         &_ => {
             return Err(Box::new(ParserError::InvalidInstruction(
                 instruction.to_string(),
@@ -97,12 +149,4 @@ fn parse_instruction(instruction: &str) -> Result<Bits<4>, Box<dyn std::error::E
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_program() {
-        let result = parse_program("test.as");
-        assert!(result.is_ok());
-    }
-}
+mod tests;

@@ -8,7 +8,7 @@ pub type Register = Bits<REGISTER_SIZE>; // Assuming 8-bit registers
 pub type RegisterBank = [Register; REGISTER_BANK_SIZE];
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub(crate) struct RegisterFile {
+pub struct RegisterFile {
     pub(crate) register_banks: [RegisterBank; 2], // Two sets of 16 registers, for simulated dual read
     enabled: bool,
     write_buffer: Vec<(Bits<4>, Bits<8>)>,
@@ -27,7 +27,7 @@ impl RegisterFile {
     #[inline]
     fn is_valid_index(&self, index: Bits<4>) -> bool {
         let index = index.to_usize();
-        index < self.register_banks[0].len() && index != 0
+        index < self.register_banks[0].len()
     }
 
     // TODO: return Result
@@ -43,12 +43,12 @@ impl RegisterFile {
     }
 
     pub(crate) fn schedule_write(&mut self, index: Bits<4>, value: Bits<8>) {
-        if self.is_valid_index(index) {
+        if self.is_valid_index(index) && index != Bits::from(0u8).resize::<4>() {
             self.write_buffer.push((index, value));
         }
     }
 
-    fn disable(&mut self) {
+    pub(crate) fn disable(&mut self) {
         self.enabled = false;
         self.read_outputs = [Bits::from(0u8); 2];
     }
@@ -76,6 +76,16 @@ impl RegisterFile {
                     }
                 }
             }
+        }
+    }
+
+    pub fn display(&self) {
+        for (i, bank) in self.register_banks.iter().enumerate() {
+            print!("Register Bank {}: ", i);
+            for reg in bank.iter() {
+                print!("{} ", reg.to_usize());
+            }
+            println!();
         }
     }
 }

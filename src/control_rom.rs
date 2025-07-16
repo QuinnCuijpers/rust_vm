@@ -1,54 +1,156 @@
-use crate::alu::AluSettings;
-use crate::register::RegisterFile;
-use crate::{bits::Bits, parser};
-use std::{fs, str::FromStr};
+use crate::{alu::AluSettings, bits::Bits};
 
-fn execute_as(file_path: &str) {
-    let mut alu = crate::alu::Alu::default();
-    let mut rb: Vec<u8> = Vec::from([0, 7, 8, 4]);
-    rb.extend_from_slice(&[0u8; 12]);
-    let rb: Vec<_> = rb.iter().map(|val| Bits::from(*val)).collect();
-    let mut rb_arr = [Bits::from(0u8); 16];
-    for (i, val) in rb.iter().enumerate() {
-        rb_arr[i] = *val;
-    }
-    let mut reg_file = RegisterFile::new(rb_arr);
-    parser::parse_program(file_path).expect("Failed to parse file");
-    let path = std::path::Path::new(file_path).with_extension("mc");
-    let programm = fs::read_to_string(path).expect("Failed to read file");
+#[derive(Debug, Default)]
+pub(crate) struct ControlRom;
 
-    let content_bits: Vec<Vec<Bits<4>>> = programm
-        .lines()
-        .map(|line| {
-            line.split(" ")
-                .map(|s| Bits::from_str(s).unwrap())
-                .collect()
-        })
-        .collect();
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub(crate) struct ControlSignals {
+    pub(crate) alu_settings: AluSettings,
+    pub(crate) enable: bool,
+    pub(crate) data_mux: bool,
+    pub(crate) dest_mux: bool,
+}
 
-    for machine_code in content_bits {
-        let parts = machine_code;
-        alu.set_setting(AluSettings::from_bits(parts[0])); // TODO: also add enable check
-        let a = parts[1];
-        let b = parts[2];
-        let write_address = parts[3];
-        reg_file.set_read_addresses([a, b]);
-        let result = alu.compute(reg_file.read_outputs[0], reg_file.read_outputs[1]);
-        reg_file.schedule_write(write_address, result);
-        reg_file.clock();
-    }
-    for (i, val) in reg_file.register_banks[0].iter().enumerate() {
-        println!("Register {i}: {}", val.to_usize());
+impl ControlRom {
+    pub(crate) fn get_control_signals(&self, opcode: Bits<4>) -> ControlSignals {
+        match opcode.to_string().as_str() {
+            "0000" => ControlSignals {
+                alu_settings: AluSettings::default(),
+                enable: false,
+                data_mux: false,
+                dest_mux: false,
+            },
+            "0010" => ControlSignals {
+                alu_settings: AluSettings::Add,
+                enable: true,
+                data_mux: false,
+                dest_mux: false,
+            },
+            "0011" => ControlSignals {
+                alu_settings: AluSettings::Sub,
+                enable: true,
+                data_mux: false,
+                dest_mux: false,
+            },
+            "0100" => ControlSignals {
+                alu_settings: AluSettings::And,
+                enable: true,
+                data_mux: false,
+                dest_mux: false,
+            },
+            "0101" => ControlSignals {
+                alu_settings: AluSettings::Nor,
+                enable: true,
+                data_mux: false,
+                dest_mux: false,
+            },
+            "0110" => ControlSignals {
+                alu_settings: AluSettings::Xor,
+                enable: true,
+                data_mux: false,
+                dest_mux: false,
+            },
+            "0111" => ControlSignals {
+                alu_settings: AluSettings::Rshift,
+                enable: true,
+                data_mux: false,
+                dest_mux: false,
+            },
+            "1000" => ControlSignals {
+                alu_settings: AluSettings::default(), // Assuming LDI does not use ALU
+                enable: true,
+                data_mux: true,
+                dest_mux: true,
+            },
+            _ => panic!("Not yet implemented"),
+        }
     }
 }
 
 mod tests {
+    #[allow(unused_imports)]
     use super::*;
-
-    // TODO: update tests to cover correct calculations
     #[test]
-    fn test_execute_as() {
-        let file_path = "test.as";
-        execute_as(file_path);
+    fn add() {
+        let set = ControlRom.get_control_signals(Bits::from(2u8).resize());
+        assert_eq!(
+            set,
+            ControlSignals {
+                alu_settings: AluSettings::Add,
+                enable: true,
+                ..Default::default()
+            }
+        );
+    }
+
+    #[test]
+    fn sub() {
+        let set = ControlRom.get_control_signals(Bits::from(3u8).resize());
+        assert_eq!(
+            set,
+            ControlSignals {
+                alu_settings: AluSettings::Sub,
+                enable: true,
+                ..Default::default()
+            }
+        );
+    }
+
+    #[test]
+    fn and() {
+        let set = ControlRom.get_control_signals(Bits::from(4u8).resize());
+        assert_eq!(
+            set,
+            ControlSignals {
+                alu_settings: AluSettings::And,
+                enable: true,
+                ..Default::default()
+            }
+        );
+    }
+
+    #[test]
+    fn nor() {
+        let set = ControlRom.get_control_signals(Bits::from(5u8).resize());
+        assert_eq!(
+            set,
+            ControlSignals {
+                alu_settings: AluSettings::Nor,
+                enable: true,
+                ..Default::default()
+            }
+        );
+    }
+
+    #[test]
+    fn xor() {
+        let set = ControlRom.get_control_signals(Bits::from(6u8).resize());
+        assert_eq!(
+            set,
+            ControlSignals {
+                alu_settings: AluSettings::Xor,
+                enable: true,
+                ..Default::default()
+            }
+        );
+    }
+
+    #[test]
+    fn rshift() {
+        let set = ControlRom.get_control_signals(Bits::from(7u8).resize());
+        assert_eq!(
+            set,
+            ControlSignals {
+                alu_settings: AluSettings::Rshift,
+                enable: true,
+                ..Default::default()
+            }
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn not_yet_implemented() {
+        let _ = ControlRom.get_control_signals(Bits::from(15u8).resize());
     }
 }

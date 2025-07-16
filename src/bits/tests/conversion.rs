@@ -1,4 +1,5 @@
-use super::super::*;
+use crate::bits::{Bits, BitsParseError};
+use std::str::FromStr;
 
 #[test]
 fn test_to_usize() {
@@ -67,30 +68,67 @@ fn test_parse_decimal_string_little_endian() {
 }
 
 #[test]
-fn test_display_outputs_big_endian_string() {
-    // Internally: little-endian [false, false, false, true] => binary 1000 => string "1000" (MSB first)
-    let bits = Bits {
-        bit_array: [false, false, false, true],
-    }; // little-endian: 0 + 0*2 + 0*4 + 1*8 = 8
-
-    let display = format!("{}", bits);
-    assert_eq!(display, "1000");
-}
-
-#[test]
-fn test_display_and_parse_roundtrip() {
-    let original = Bits::<4>::from_str("1010").unwrap();
-    let rendered = format!("{}", original);
-    let reparsed = Bits::<4>::from_str(&rendered).unwrap();
-
-    assert_eq!(original, reparsed);
-}
-
-#[test]
 fn test_from_str_decimal_vs_binary_equivalence() {
     // "0101" binary is 5 in decimal
     let from_binary = Bits::<4>::from_str("0101").unwrap();
     let from_decimal = Bits::<4>::from_str("5").unwrap();
 
     assert_eq!(from_binary, from_decimal);
+}
+
+#[test]
+fn test_try_from_unsigned() {
+    let bits: Bits<8> = Bits::try_from_unsigned_number(255u8).unwrap();
+    assert_eq!(
+        bits.bit_array,
+        [true, true, true, true, true, true, true, true]
+    );
+
+    let bits: Bits<4> = Bits::try_from_unsigned_number(15u8).unwrap();
+    assert_eq!(bits.bit_array, [true, true, true, true]);
+
+    let out_of_bounds = Bits::<4>::try_from_unsigned_number(16u8);
+    assert_eq!(
+        out_of_bounds,
+        Err(BitsParseError::OutOfBounds {
+            value: 16,
+            max: (1 << 4) - 1
+        })
+    );
+}
+
+#[test]
+fn test_from_ref_bits() {
+    let bits = Bits::<8>::from(0b10101010u8);
+    let ref_bits: &Bits<8> = &bits;
+    assert_eq!(ref_bits.to_string(), "10101010");
+
+    assert_eq!(u8::from(ref_bits), 0b10101010);
+    assert_eq!(ref_bits.to_string(), "10101010");
+
+    // Test that formatting a reference yields the same as owned
+    assert_eq!(format!("{}", ref_bits), format!("{}", bits));
+}
+
+#[test]
+fn test_from_bool_slice() {
+    let bools: [bool; 4] = [true, false, true, false];
+    let bits: Bits<4> = Bits::from(bools);
+    assert_eq!(bits.bit_array, bools);
+
+    // Test conversion back to slice
+    let slice: &[bool] = &bits.bit_array;
+    assert_eq!(slice, &bools);
+}
+
+#[test]
+fn test_bool_slice_from_bits() {
+    let bits: Bits<4> = Bits::from(10u8).resize();
+    let bools: [bool; 4] = bits.into();
+    let expected: [bool; 4] = [false, true, false, true];
+    assert_eq!(bools, expected);
+
+    // Test conversion back to Bits
+    let bits_from_slice: Bits<4> = Bits::from(bools);
+    assert_eq!(bits_from_slice, bits);
 }

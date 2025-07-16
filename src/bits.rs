@@ -1,14 +1,12 @@
 use core::error;
-use std::{
-    ops::{Index, Range},
-    str::FromStr,
-};
+use std::{ops::Index, str::FromStr};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BitsParseError {
     Length { expected: usize, found: usize },
     Character { character: char },
     Number { source: std::num::ParseIntError },
+    OutOfBounds { value: usize, max: usize },
 }
 
 impl std::fmt::Display for BitsParseError {
@@ -21,6 +19,9 @@ impl std::fmt::Display for BitsParseError {
                 write!(f, "Invalid character: '{}'", character)
             }
             BitsParseError::Number { source } => write!(f, "Invalid number: {}", source),
+            BitsParseError::OutOfBounds { value, max } => {
+                write!(f, "Value {} is out of bounds (max: {})", value, max)
+            }
         }
     }
 }
@@ -28,7 +29,7 @@ impl std::fmt::Display for BitsParseError {
 impl error::Error for BitsParseError {}
 
 #[derive(Debug, Clone, Copy, Eq)]
-pub(crate) struct Bits<const N: usize> {
+pub struct Bits<const N: usize> {
     pub(crate) bit_array: [bool; N],
 }
 
@@ -41,18 +42,6 @@ impl<const N: usize> Bits<N> {
         self.bit_array.iter_mut()
     }
 
-    pub(crate) fn len(&self) -> usize {
-        N
-    }
-
-    pub(crate) fn to_bytes(self) -> Vec<u8> {
-        self.bit_array
-            .iter()
-            .map(|&b| if b { 1 } else { 0 })
-            .rev()
-            .collect()
-    }
-
     pub(crate) fn to_usize(self) -> usize {
         self.bit_array
             .iter()
@@ -60,14 +49,17 @@ impl<const N: usize> Bits<N> {
             .fold(0, |acc, (i, &b)| acc | ((b as usize) << i))
     }
 
-    pub fn try_from_unsigned_number<T>(value: T) -> Result<Self, &'static str>
+    pub fn try_from_unsigned_number<T>(value: T) -> Result<Self, BitsParseError>
     where
         T: Into<u64> + Copy,
     {
         let val_u64: u64 = value.into();
 
         if val_u64 >= (1u64 << N) {
-            return Err("Value does not fit into Bits<N>");
+            return Err(BitsParseError::OutOfBounds {
+                value: val_u64 as usize,
+                max: (1 << N) - 1,
+            });
         }
 
         let mut res = [false; N];
@@ -87,7 +79,7 @@ impl<const N: usize> Bits<N> {
         Bits { bit_array: out }
     }
 
-    pub(crate) fn to_chunks<const CHUNK_SIZE: usize>(self) -> Vec<Bits<CHUNK_SIZE>> {
+    pub(crate) fn split_into_chunks<const CHUNK_SIZE: usize>(self) -> Vec<Bits<CHUNK_SIZE>> {
         assert!(N % CHUNK_SIZE == 0, "Size must divide N evenly");
         let mut chunks = Vec::new();
         for chunk in self.bit_array.chunks(CHUNK_SIZE) {
@@ -128,10 +120,9 @@ impl<const N: usize> FromStr for Bits<N> {
                     .map_err(|e| BitsParseError::Number { source: e })?;
 
                 if num >= (1 << N) {
-                    //TODO: improve this error message
-                    return Err(BitsParseError::Length {
-                        expected: N,
-                        found: len,
+                    return Err(BitsParseError::OutOfBounds {
+                        value: num as usize,
+                        max: (1 << N) - 1,
                     });
                 }
 
@@ -246,14 +237,6 @@ impl<const N: usize> Index<usize> for Bits<N> {
     type Output = bool;
 
     fn index(&self, index: usize) -> &Self::Output {
-        &self.bit_array[index]
-    }
-}
-
-impl<const N: usize> Index<Range<usize>> for Bits<N> {
-    type Output = [bool];
-
-    fn index(&self, index: Range<usize>) -> &Self::Output {
         &self.bit_array[index]
     }
 }

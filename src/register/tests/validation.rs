@@ -24,3 +24,16 @@ fn test_read_zero_address_no_update() {
     assert_eq!(reg_file.read_outputs[0], Bits::from(0u8));
     assert_eq!(reg_file.read_outputs[1], Bits::from(0u8));
 }
+
+#[test]
+fn test_read_from_0() {
+    let mut reg_file = RegisterFile::default();
+    reg_file.enable();
+
+    reg_file.schedule_write(Bits::from_str("0").unwrap(), Bits::from_str("15").unwrap());
+    reg_file.clock();
+
+    // Register at index 0 should remain 0
+    assert_eq!(reg_file.read_outputs[0], Bits::from(0u8));
+    assert_eq!(reg_file.read_outputs[0], Bits::from(0u8));
+}
