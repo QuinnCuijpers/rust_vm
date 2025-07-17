@@ -1,10 +1,12 @@
+use std::fs;
 use std::path::Path;
-use std::{fs, str::FromStr};
+use std::str::FromStr;
 
 use crate::bits::Bits;
 use crate::program_counter::Address;
 use crate::Result;
 
+// TODO: split parser into multiple files for better organization
 #[derive(Debug)]
 pub enum ParserError {
     FileNotFound(String),
