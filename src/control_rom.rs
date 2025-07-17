@@ -20,6 +20,9 @@ impl ControlRom {
                 data_mux: false,
                 dest_mux: false,
             },
+            "0001" => ControlSignals {
+                ..Default::default() // NOP instruction does not use ALU, no control signals needed
+            },
             "0010" => ControlSignals {
                 alu_settings: AluSettings::Add,
                 enable: true,

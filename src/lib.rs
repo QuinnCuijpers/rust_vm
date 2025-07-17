@@ -3,17 +3,22 @@ use std::{path::Path, str::FromStr};
 
 use crate::{
     alu::Alu, bits::Bits, control_rom::ControlRom, instruction_memory::InstructionMemory,
-    register::RegisterFile,
+    program_counter::PC, register::RegisterFile,
 };
 mod alu;
 mod bits;
 mod control_rom;
 mod instruction_memory;
 mod parser;
+mod program_counter;
 mod register;
 
 pub type ProgramInstruction = [Bits<4>; 4];
 pub type Program = Vec<ProgramInstruction>;
+type OpCode = Bits<4>;
+const OPCODE_HLT: Bits<4> = Bits {
+    bit_array: [true, false, false, false],
+};
 
 #[derive(Debug)]
 pub struct VM {
@@ -21,6 +26,7 @@ pub struct VM {
     pub reg_file: RegisterFile,
     control_rom: ControlRom,
     instruction_memory: InstructionMemory,
+    pc: PC,
 }
 
 impl VM {
@@ -29,21 +35,20 @@ impl VM {
         let reg_file = RegisterFile::default();
         let control_rom = ControlRom;
         let instruction_memory = InstructionMemory::default();
+        let pc = PC::default();
         VM {
             alu,
             reg_file,
             control_rom,
             instruction_memory,
+            pc,
         }
     }
 
     pub fn execute_program(&mut self, file_path: impl AsRef<Path>) {
         let file_path = file_path.as_ref();
-        self.load_program(file_path.to_str().unwrap());
-        let instructions: [ProgramInstruction; 1024] = self.instruction_memory.instructions;
-        for instruction in instructions.iter() {
-            self.execute_instruction(*instruction);
-        }
+        self.load_program(file_path);
+        while self.clock() != OPCODE_HLT {}
     }
 
     pub fn load_program(&mut self, file_path: impl AsRef<Path>) {
@@ -68,7 +73,7 @@ impl VM {
         self.instruction_memory.load_instructions(content_bits);
     }
 
-    pub fn execute_instruction(&mut self, instruction: ProgramInstruction) {
+    pub fn process_instruction(&mut self, instruction: ProgramInstruction) {
         let opcode = instruction[0];
         let control_signals = self.control_rom.get_control_signals(opcode);
         self.alu.set_setting(control_signals.alu_settings);
@@ -96,7 +101,19 @@ impl VM {
             write_adress = r1;
         }
         self.reg_file.schedule_write(write_adress, data);
+    }
+
+    fn clock(&mut self) -> OpCode {
+        // TODO: implement sliceindex
+        let instr_adr = self.pc.clock().to_usize();
+        // TODO: handle out of bounds instruction address
+        if instr_adr >= self.instruction_memory.instructions.len() {
+            return OPCODE_HLT;
+        }
+        let instruction = self.instruction_memory.instructions[instr_adr];
+        self.process_instruction(instruction);
         self.reg_file.clock();
+        instruction[0]
     }
 }
 
@@ -127,11 +144,7 @@ mod tests {
         arr[3] = Bits::from(6u8);
         let mut vm = VM::new();
         vm.reg_file = RegisterFile::new(RegisterBank::from(arr));
-        vm.load_program("test.as");
-        let instructions = vm.instruction_memory.instructions;
-        for instruction in instructions.iter() {
-            vm.execute_instruction(*instruction);
-        }
+        vm.execute_program("test.as");
         assert_eq!(vm.reg_file.register_banks[0][1].to_usize(), 7,);
         assert_eq!(vm.reg_file.register_banks[0][2].to_usize(), 7,);
         assert_eq!(vm.reg_file.register_banks[0][3].to_usize(), 9,);
@@ -143,6 +156,7 @@ mod tests {
     #[test]
     fn test_nop() {
         std::fs::write("nop.as", "NOP\n").unwrap();
+        std::fs::write("nop.as", "HLT").unwrap();
         let mut vm = VM::default();
         vm.execute_program("nop.as");
         std::fs::remove_file("nop.as").unwrap();
@@ -174,5 +188,16 @@ mod tests {
         vm.execute_program("test3.as");
         assert_eq!(vm.reg_file.register_banks[0][1].to_usize(), 4);
         assert_eq!(vm.reg_file.register_banks[0][2].to_usize(), 8);
+    }
+
+    #[test]
+    fn test_fib() {
+        let mut vm = VM::default();
+        vm.execute_program("fib.as");
+        assert_eq!(vm.reg_file.register_banks[0][1].to_usize(), 1);
+        assert_eq!(vm.reg_file.register_banks[0][2].to_usize(), 1);
+        assert_eq!(vm.reg_file.register_banks[0][3].to_usize(), 2);
+        assert_eq!(vm.reg_file.register_banks[0][4].to_usize(), 3);
+        assert_eq!(vm.reg_file.register_banks[0][5].to_usize(), 5);
     }
 }

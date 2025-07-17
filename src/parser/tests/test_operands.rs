@@ -122,3 +122,103 @@ fn test_unknown_operand() {
         _ => panic!("Expected InvalidInstruction error"),
     }
 }
+
+#[test]
+fn test_parse_register_string_invalid_prefix() {
+    let err = parse_register_string("x1")
+        .unwrap_err()
+        .downcast::<ParserError>()
+        .unwrap();
+    match *err {
+        ParserError::InvalidInstruction(ref s) => assert_eq!(s, "x1"),
+        _ => panic!("Expected InvalidInstruction error"),
+    }
+}
+
+#[test]
+fn test_parse_register_string_too_short() {
+    let err = parse_register_string("r")
+        .unwrap_err()
+        .downcast::<ParserError>()
+        .unwrap();
+    match *err {
+        ParserError::InvalidInstruction(ref s) => assert_eq!(s, "r"),
+        _ => panic!("Expected InvalidInstruction error"),
+    }
+}
+
+#[test]
+fn test_ldi_missing_value_operand() {
+    let test_file = "test_ldi_missing_value.as";
+    let mut file = File::create(test_file).unwrap();
+    writeln!(file, "LDI r1").unwrap();
+    drop(file);
+
+    let err = parse_program(test_file)
+        .unwrap_err()
+        .downcast::<ParserError>()
+        .unwrap();
+    match *err {
+        ParserError::MissingOperand(ref line) => assert!(line.contains("LDI r1")),
+        _ => panic!("Expected MissingOperand error"),
+    }
+
+    std::fs::remove_file(test_file).unwrap();
+}
+
+#[test]
+fn test_ldi_too_many_operands() {
+    let test_file = "test_ldi_too_many_operands.as";
+    let mut file = File::create(test_file).unwrap();
+    writeln!(file, "LDI r1 42 extra").unwrap();
+    drop(file);
+
+    let err = parse_program(test_file)
+        .unwrap_err()
+        .downcast::<ParserError>()
+        .unwrap();
+    match *err {
+        ParserError::MissingOperand(ref line) => assert!(line.contains("LDI r1 42 extra")),
+        _ => panic!("Expected MissingOperand error"),
+    }
+
+    std::fs::remove_file(test_file).unwrap();
+}
+
+#[test]
+fn test_ldi_only_instruction() {
+    let test_file = "test_ldi_only_instruction.as";
+    let mut file = File::create(test_file).unwrap();
+    writeln!(file, "LDI").unwrap();
+    drop(file);
+
+    let err = parse_program(test_file)
+        .unwrap_err()
+        .downcast::<ParserError>()
+        .unwrap();
+    match *err {
+        ParserError::MissingOperand(ref line) => assert!(line.contains("LDI")),
+        _ => panic!("Expected MissingOperand error"),
+    }
+
+    std::fs::remove_file(test_file).unwrap();
+}
+
+#[test]
+fn test_ldi_invalid_value_operand() {
+    let test_file = "test_ldi_invalid_value.as";
+    let mut file = File::create(test_file).unwrap();
+    writeln!(file, "LDI r1 na").unwrap();
+    drop(file);
+
+    let err = parse_program(test_file).unwrap_err();
+    let err_str = err.to_string();
+    assert!(
+        err_str.contains("Invalid number") || err_str.contains("ParseIntError"),
+        "Error: {}",
+        err_str
+    );
+
+    std::fs::remove_file(test_file).unwrap();
+}
+

@@ -25,3 +25,25 @@ impl InstructionMemory {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_instruction(val: u8) -> ProgramInstruction {
+        [
+            Bits::from(val).resize(),
+            Bits::from(val).resize(),
+            Bits::from(val).resize(),
+            Bits::from(val).resize(),
+        ]
+    }
+
+    #[test]
+    #[should_panic(expected = "Instruction memory overflow")]
+    fn test_load_instructions_overflow_panics() {
+        let mut mem = InstructionMemory::default();
+        let instructions = vec![make_instruction(0); 1025];
+        mem.load_instructions(instructions);
+    }
+}

@@ -1,2 +1,3 @@
 LDI r1 4
 ADD r1 r1 r2
+HLT

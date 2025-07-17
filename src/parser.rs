@@ -47,7 +47,7 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<(), Box<dyn s
         };
         let mut operands = splitted;
         match instruction {
-            "NOP" => {
+            "NOP" | "HLT" => {
                 let instruction_bits = parse_instruction(instruction)?;
                 out.push(instruction_bits.to_string());
                 out.push("0000 0000 0000".to_string()); // NOP has no operands and is parsed as all zeros
@@ -132,6 +132,7 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<(), Box<dyn s
 fn parse_instruction(instruction: &str) -> Result<Bits<4>, Box<dyn std::error::Error>> {
     let instruction_bits: Bits<4> = match instruction {
         "NOP" => Bits::from_str("0000")?,
+        "HLT" => Bits::from_str("0001")?,
         "ADD" => Bits::from_str("0010")?,
         "SUB" => Bits::from_str("0011")?,
         "AND" => Bits::from_str("0100")?,

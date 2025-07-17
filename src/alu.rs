@@ -139,16 +139,15 @@ impl Alu {
         Self { config, setting }
     }
 
-    pub(crate) fn compute(&self, mut a: Bits<8>, mut b: Bits<8>) -> Bits<8> {
-        const CARRY_LENGTH: usize = 9;
+    pub(crate) fn compute<const N: usize>(&self, mut a: Bits<N>, mut b: Bits<N>) -> Bits<N> {
         let config = self.config;
 
         if config.is_rshift {
-            let mut res = [false; 8];
-            for i in 0..7 {
-                res[i] = a[i + 1]; // right shift returns a shifted right by 1
+            let mut res = [false; N];
+            for i in 0..(N - 1) {
+                res[i] = a[i + 1];
             }
-            res[7] = false;
+            res[N - 1] = false;
             return Bits::from(res);
         }
 
@@ -160,12 +159,12 @@ impl Alu {
             a.iter_mut().for_each(|bit| *bit = !*bit);
         }
 
-        let mut carry = [Signal::Cancel; CARRY_LENGTH];
-        let mut xor_or = [false; 8];
-        let mut res = [false; 8];
-        for i in 0..CARRY_LENGTH {
+        let mut carry = vec![Signal::Cancel; N + 1];
+        let mut xor_or = [false; N];
+        let mut res = [false; N];
+        for i in 0..(N + 1) {
             if i == 0 {
-                carry[i..CARRY_LENGTH].fill(match config.carry_in {
+                carry[i..(N + 1)].fill(match config.carry_in {
                     true => Signal::Generate,
                     false => Signal::Cancel,
                 });
@@ -179,18 +178,18 @@ impl Alu {
             } else {
                 xor_or[i - 1] = a_bit ^ b_bit;
                 if a_bit && b_bit {
-                    carry[i..CARRY_LENGTH].fill(Signal::Generate);
+                    carry[i..(N + 1)].fill(Signal::Generate);
                 } else if !a_bit && !b_bit {
-                    carry[i..CARRY_LENGTH].fill(Signal::Cancel);
+                    carry[i..(N + 1)].fill(Signal::Cancel);
                 }
             }
         }
 
         if config.flood_carry {
-            carry[0..CARRY_LENGTH].fill(Signal::Generate);
+            carry[0..(N + 1)].fill(Signal::Generate);
         }
 
-        for i in 0..(CARRY_LENGTH - 1) {
+        for i in 0..N {
             match carry[i] {
                 Signal::Cancel => {
                     res[i] = xor_or[i] ^ false;

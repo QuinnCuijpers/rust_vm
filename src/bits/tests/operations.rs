@@ -39,3 +39,27 @@ fn test_split_into_chunks() {
     assert_eq!(chunks[2].to_string(), "0000");
     assert_eq!(chunks[3].to_string(), "1111");
 }
+
+#[test]
+fn test_add() {
+    let bits1 = Bits::<8>::from(0b0000_0011u8); // 3 in binary
+    let bits2 = Bits::<8>::from(0b0000_0101u8); // 5 in binary
+    let result = bits1 + bits2;
+    assert_eq!(result, Bits::<8>::from(0b0000_1000u8)); // 8 in binary
+}
+
+#[test]
+fn test_sub() {
+    let bits1 = Bits::<8>::from(0b0000_0110u8);
+    let bits2 = Bits::<8>::from(0b0000_0011u8);
+    let result = bits1 - bits2;
+    assert_eq!(result, Bits::<8>::from(0b0000_0011u8));
+}
+
+#[test]
+fn test_subassign() {
+    let mut bits1 = Bits::<8>::from(0b0000_0110u8); // 6 in binary
+    let bits2 = Bits::<8>::from(0b0000_0011u8); // 3 in binary
+    bits1 -= bits2;
+    assert_eq!(bits1, Bits::<8>::from(0b0000_0011u8)); // 3 in binary
+}
