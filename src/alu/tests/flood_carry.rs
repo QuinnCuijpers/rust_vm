@@ -1,7 +1,7 @@
 use super::*;
 #[test]
 fn xor() {
-    let alu = Alu::new(AluSettings::Xor);
+    let mut alu = Alu::new(AluSettings::Xor);
     assert_bits!(
         alu.compute(bits_8!(0b00000000), bits_8!(0b00000000)),
         "00000000"
@@ -30,7 +30,7 @@ fn xor() {
 
 #[test]
 fn xnor() {
-    let alu = Alu::new(AluSettings::Xnor);
+    let mut alu = Alu::new(AluSettings::Xnor);
     assert_bits!(
         alu.compute(bits_8!(0b00000000), bits_8!(0b00000000)),
         "11111111"

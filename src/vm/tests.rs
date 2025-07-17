@@ -93,3 +93,15 @@ fn vm_program_6() {
     vm.execute_program("test6.as").unwrap();
     assert_eq!(vm.reg_file.register_banks[0][1].to_usize(), 1);
 }
+
+#[test]
+fn vm_program_7() {
+    let mut vm = VM::default();
+    vm.execute_program("test7.as").unwrap();
+}
+
+#[test]
+fn vm_program_8() {
+    let mut vm = VM::default();
+    vm.execute_program("test8.as").unwrap();
+}

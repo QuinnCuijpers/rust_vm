@@ -1,0 +1,5 @@
+LDI r1 3
+DEC r1
+BRH != 4
+JMP 1
+HLT

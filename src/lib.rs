@@ -13,6 +13,8 @@ mod register;
 mod utils;
 mod vm;
 
+//TODO: clean up type aliases
+
 pub use crate::bits::BitsParseError;
 pub use crate::parser::ParserError;
 pub use crate::vm::VM;

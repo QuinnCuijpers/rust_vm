@@ -88,6 +88,24 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
                 out.push(Bits::<2>::from_str("00").unwrap().to_string());
                 out.push(parse_address(a)?.to_string());
             }
+            "CMP" => {
+                let a = match operands.next() {
+                    Some(op) => op,
+                    None => return Err(ParserError::MissingOperand(line.to_string()).into()),
+                };
+                let b = match operands.next() {
+                    Some(op) => op,
+                    None => return Err(ParserError::MissingOperand(line.to_string()).into()),
+                };
+                if operands.next().is_some() {
+                    return Err(ParserError::MissingOperand(line.to_string()).into());
+                }
+                // CMP rx ry -> SUB rx ry r0
+                out.push(parse_instruction("SUB").unwrap().to_string());
+                out.push(parse_register_string(a)?.to_string());
+                out.push(parse_register_string(b)?.to_string());
+                out.push("0000".to_string())
+            }
             "LDI" | "ADI" => {
                 let a = match operands.next() {
                     Some(op) => op,
@@ -116,7 +134,7 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
                 if operands.next().is_some() {
                     return Err(ParserError::MissingOperand(line.to_string()).into());
                 }
-                out.push(parse_instruction(instruction).unwrap().to_string());
+                out.push(parse_instruction("RSH").unwrap().to_string());
                 out.push(parse_register_string(a)?.to_string());
                 out.push("0000".to_string());
                 out.push(parse_register_string(write)?.to_string());
@@ -142,6 +160,22 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
                 out.push(parse_register_string(b)?.to_string());
                 out.push(parse_register_string(write)?.to_string());
             }
+            "BRH" => {
+                let a = match operands.next() {
+                    Some(op) => op,
+                    None => return Err(ParserError::MissingOperand(line.to_string()).into()),
+                };
+                let addr = match operands.next() {
+                    Some(op) => op,
+                    None => return Err(ParserError::MissingOperand(line.to_string()).into()),
+                };
+                if operands.next().is_some() {
+                    return Err(ParserError::MissingOperand(line.to_string()).into());
+                }
+                out.push(parse_instruction("BRH").unwrap().to_string());
+                out.push(parse_cond(a)?.to_string());
+                out.push(parse_address(addr)?.to_string());
+            }
             _ => return Err(ParserError::InvalidInstruction(instruction.to_string()).into()),
         }
         output_lines.push(out.join(" "));
@@ -153,6 +187,17 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
         writeln!(output_file, "{l}")?
     }
     Ok(())
+}
+
+#[allow(clippy::unwrap_used)]
+fn parse_cond(a: &str) -> Result<Bits<2>> {
+    match a {
+        "zero" | "=" => Ok(Bits::from_str("00").unwrap()),
+        "notzero" | "!=" => Ok(Bits::from_str("01").unwrap()),
+        "carry" | ">=" => Ok(Bits::from_str("10").unwrap()),
+        "notcarry" | "<" => Ok(Bits::from_str("11").unwrap()),
+        _ => Err(ParserError::InvalidInstruction(a.to_string()).into()),
+    }
 }
 
 fn parse_address(a: &str) -> Result<Address> {
@@ -173,6 +218,7 @@ fn parse_instruction(instruction: &str) -> Result<Bits<4>> {
         "LDI" => Bits::from_str("1000").unwrap(),
         "ADI" => Bits::from_str("1001").unwrap(),
         "JMP" => Bits::from_str("1010").unwrap(),
+        "BRH" => Bits::from_str("1011").unwrap(),
         &_ => return Err(ParserError::InvalidInstruction(instruction.to_string()).into()),
     };
     Ok(instruction_bits)

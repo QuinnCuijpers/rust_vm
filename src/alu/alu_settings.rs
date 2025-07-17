@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Default, Eq)]
 pub(crate) struct AluConfig {
     pub(crate) invert_a: bool,
     pub(crate) invert_b: bool,

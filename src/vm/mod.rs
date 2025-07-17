@@ -11,7 +11,7 @@ const OPCODE_HLT: Bits<4> = Bits {
     bit_array: [true, false, false, false],
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct VM {
     alu: Alu,
     pub reg_file: RegisterFile,
@@ -65,6 +65,12 @@ impl VM {
         if control_signals.addr_mux {
             next_pc = instruction.slice(0);
         }
+        if control_signals.is_branch {
+            let condition = instruction.slice(10);
+            if self.alu.flags.cond_true(condition) {
+                next_pc = instruction.slice(0);
+            }
+        }
 
         self.alu.set_setting(control_signals.alu_settings);
         if control_signals.reg_file_enable {
@@ -80,10 +86,14 @@ impl VM {
         if control_signals.alu_mux {
             b = instruction.slice(0);
         }
-        let mut data = self.alu.compute(a, b);
-        if control_signals.data_mux {
-            data = instruction.slice(0);
-        }
+        let data = if control_signals.set_flags {
+            self.alu.compute(a, b)
+        } else if control_signals.data_mux {
+            instruction.slice(0)
+        } else {
+            // TODO: properly handle
+            Bits::from(0u8)
+        };
         if control_signals.dest_mux {
             write_adress = r1;
         }
@@ -92,7 +102,6 @@ impl VM {
     }
 
     fn clock(&mut self) -> OpCode {
-        // TODO: increment the program counter
         let instr_adr = self.pc.clock().to_usize();
         if instr_adr >= self.instruction_memory.instructions.len() {
             return OPCODE_HLT;
@@ -104,12 +113,5 @@ impl VM {
     }
 }
 
-// ...existing code...
-
-impl Default for VM {
-    fn default() -> Self {
-        Self::new()
-    }
-}
 #[cfg(test)]
 mod tests;

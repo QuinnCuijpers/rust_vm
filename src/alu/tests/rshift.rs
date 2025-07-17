@@ -5,7 +5,7 @@ use crate::{
 
 #[test]
 fn rshift() {
-    let alu = Alu::new(AluSettings::Rshift);
+    let mut alu = Alu::new(AluSettings::Rshift);
     let a = Bits::from(4u8);
     let b = Bits::from(0u8);
     assert_bits!(alu.compute(a, b), "00000010");

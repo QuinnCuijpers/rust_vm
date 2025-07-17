@@ -1,7 +1,7 @@
 use super::*;
 #[test]
 fn or() {
-    let alu = Alu::new(AluSettings::Or);
+    let mut alu = Alu::new(AluSettings::Or);
     assert_bits!(
         alu.compute(bits_8!(0b00000010), bits_8!(0b00000011)),
         "00000011"
@@ -18,7 +18,7 @@ fn or() {
 
 #[test]
 fn nor() {
-    let alu = Alu::new(AluSettings::Nor);
+    let mut alu = Alu::new(AluSettings::Nor);
     assert_bits!(
         alu.compute(bits_8!(0b00000010), bits_8!(0b00000011)),
         "11111100"
@@ -35,7 +35,7 @@ fn nor() {
 
 #[test]
 fn and() {
-    let alu = Alu::new(AluSettings::And);
+    let mut alu = Alu::new(AluSettings::And);
     assert_bits!(
         alu.compute(bits_8!(0b00000010), bits_8!(0b00000011)),
         "00000010"
@@ -52,7 +52,7 @@ fn and() {
 
 #[test]
 fn nand() {
-    let alu = Alu::new(AluSettings::Nand);
+    let mut alu = Alu::new(AluSettings::Nand);
     assert_bits!(
         alu.compute(bits_8!(0b00000010), bits_8!(0b00000011)),
         "11111101"
@@ -69,7 +69,7 @@ fn nand() {
 
 #[test]
 fn implies() {
-    let alu = Alu::new(AluSettings::Implies);
+    let mut alu = Alu::new(AluSettings::Implies);
     assert_bits!(
         alu.compute(bits_8!(0b00000010), bits_8!(0b00000011)),
         "11111111"
@@ -86,7 +86,7 @@ fn implies() {
 
 #[test]
 fn nimplies() {
-    let alu = Alu::new(AluSettings::Nimplies);
+    let mut alu = Alu::new(AluSettings::Nimplies);
     assert_bits!(
         alu.compute(bits_8!(0b00000010), bits_8!(0b00000011)),
         "00000000"

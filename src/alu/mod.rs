@@ -1,7 +1,9 @@
+pub(crate) mod alu_flags;
 pub(crate) mod alu_settings;
 
 pub(crate) use alu_settings::AluSettings;
 
+use crate::alu::alu_flags::AluFlags;
 use crate::alu::alu_settings::AluConfig;
 use crate::bits::Bits;
 
@@ -11,19 +13,24 @@ enum Signal {
     Generate,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Alu {
     config: AluConfig,
     pub setting: AluSettings,
+    pub flags: AluFlags,
 }
 
 impl Alu {
     pub(crate) fn new(setting: AluSettings) -> Self {
         let config = setting.config(setting);
-        Self { config, setting }
+        Self {
+            config,
+            setting,
+            ..Default::default()
+        }
     }
 
-    pub(crate) fn compute<const N: usize>(&self, mut a: Bits<N>, mut b: Bits<N>) -> Bits<N> {
+    pub(crate) fn compute<const N: usize>(&mut self, mut a: Bits<N>, mut b: Bits<N>) -> Bits<N> {
         let config = self.config;
 
         if config.is_rshift {
@@ -83,7 +90,10 @@ impl Alu {
                 }
             }
         }
-        Bits::from(res)
+        let res = Bits::from(res);
+        self.flags.set_zero(res == Bits::from(0u8));
+        self.flags.set_carry(carry[N] == Signal::Generate);
+        res
     }
 
     pub(crate) fn set_setting(&mut self, setting: AluSettings) {

@@ -11,6 +11,8 @@ pub(crate) struct ControlSignals {
     pub(crate) dest_mux: bool,
     pub(crate) alu_mux: bool,
     pub(crate) addr_mux: bool,
+    pub(crate) is_branch: bool,
+    pub(crate) set_flags: bool,
 }
 
 impl ControlRom {
@@ -18,46 +20,55 @@ impl ControlRom {
         match opcode.to_string().as_str() {
             "0000" => ControlSignals {
                 reg_file_enable: false,
+                set_flags: false,
                 ..Default::default()
             },
             "0001" => ControlSignals {
                 reg_file_enable: false,
+                set_flags: false,
                 ..Default::default()
             },
             "0010" => ControlSignals {
                 alu_settings: AluSettings::Add,
                 reg_file_enable: true,
+                set_flags: true,
                 ..Default::default()
             },
             "0011" => ControlSignals {
                 alu_settings: AluSettings::Sub,
                 reg_file_enable: true,
+                set_flags: true,
                 ..Default::default()
             },
             "0100" => ControlSignals {
                 alu_settings: AluSettings::And,
                 reg_file_enable: true,
+                set_flags: true,
                 ..Default::default()
             },
             "0101" => ControlSignals {
                 alu_settings: AluSettings::Nor,
                 reg_file_enable: true,
+                set_flags: true,
                 ..Default::default()
             },
             "0110" => ControlSignals {
                 alu_settings: AluSettings::Xor,
                 reg_file_enable: true,
+                set_flags: true,
                 ..Default::default()
             },
             "0111" => ControlSignals {
                 alu_settings: AluSettings::Rshift,
                 reg_file_enable: true,
+                set_flags: true,
                 ..Default::default()
             },
             "1000" => ControlSignals {
                 reg_file_enable: true,
                 data_mux: true,
                 dest_mux: true,
+                set_flags: false,
                 ..Default::default()
             },
             "1001" => ControlSignals {
@@ -65,10 +76,17 @@ impl ControlRom {
                 reg_file_enable: true,
                 dest_mux: true,
                 alu_mux: true,
+                set_flags: true,
                 ..Default::default()
             },
             "1010" => ControlSignals {
                 addr_mux: true,
+                set_flags: false,
+                ..Default::default()
+            },
+            "1011" => ControlSignals {
+                is_branch: true,
+                set_flags: false,
                 ..Default::default()
             },
             #[allow(clippy::panic)]
@@ -88,6 +106,7 @@ mod tests {
             ControlSignals {
                 alu_settings: AluSettings::Add,
                 reg_file_enable: true,
+                set_flags: true,
                 ..Default::default()
             }
         );
@@ -101,6 +120,7 @@ mod tests {
             ControlSignals {
                 alu_settings: AluSettings::Sub,
                 reg_file_enable: true,
+                set_flags: true,
                 ..Default::default()
             }
         );
@@ -114,6 +134,7 @@ mod tests {
             ControlSignals {
                 alu_settings: AluSettings::And,
                 reg_file_enable: true,
+                set_flags: true,
                 ..Default::default()
             }
         );
@@ -127,6 +148,7 @@ mod tests {
             ControlSignals {
                 alu_settings: AluSettings::Nor,
                 reg_file_enable: true,
+                set_flags: true,
                 ..Default::default()
             }
         );
@@ -140,6 +162,7 @@ mod tests {
             ControlSignals {
                 alu_settings: AluSettings::Xor,
                 reg_file_enable: true,
+                set_flags: true,
                 ..Default::default()
             }
         );
@@ -153,6 +176,7 @@ mod tests {
             ControlSignals {
                 alu_settings: AluSettings::Rshift,
                 reg_file_enable: true,
+                set_flags: true,
                 ..Default::default()
             }
         );

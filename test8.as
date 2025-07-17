@@ -1,0 +1,5 @@
+LDI r1 2
+DEC r1
+CMP r1 r0
+BRH = 1
+HLT

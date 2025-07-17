@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn addition() {
-    let alu = Alu::new(AluSettings::Add);
+    let mut alu = Alu::new(AluSettings::Add);
     assert_bits!(alu.compute(bits_8!(0), bits_8!(0)), "00000000");
     assert_bits!(alu.compute(bits_8!(1), bits_8!(1)), "00000010");
     assert_bits!(alu.compute(bits_8!(2), bits_8!(3)), "00000101");
@@ -11,7 +11,7 @@ fn addition() {
 
 #[test]
 fn subtraction() {
-    let alu = Alu::new(AluSettings::Sub);
+    let mut alu = Alu::new(AluSettings::Sub);
     assert_bits!(alu.compute(bits_8!(0), bits_8!(0)), "00000000");
     assert_bits!(alu.compute(bits_8!(5), bits_8!(3)), "00000010");
     assert_bits!(alu.compute(bits_8!(10), bits_8!(5)), "00000101");
@@ -21,7 +21,7 @@ fn subtraction() {
 
 #[test]
 fn addition_edge_cases() {
-    let alu = Alu::new(AluSettings::Add);
+    let mut alu = Alu::new(AluSettings::Add);
     assert_bits!(alu.compute(bits_8!(0), bits_8!(255)), "11111111");
     assert_bits!(alu.compute(bits_8!(255), bits_8!(0)), "11111111");
     assert_bits!(alu.compute(bits_8!(127), bits_8!(1)), "10000000");
@@ -30,7 +30,7 @@ fn addition_edge_cases() {
 
 #[test]
 fn subtraction_edge_cases() {
-    let alu = Alu::new(AluSettings::Sub);
+    let mut alu = Alu::new(AluSettings::Sub);
     assert_bits!(alu.compute(bits_8!(255), bits_8!(255)), "00000000");
     assert_bits!(alu.compute(bits_8!(1), bits_8!(255)), "00000010");
     assert_bits!(alu.compute(bits_8!(98), bits_8!(100)), "11111110");
