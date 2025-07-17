@@ -1,0 +1,106 @@
+use crate::{
+    alu::Alu, bits::Bits, control_rom::ControlRom, instruction_memory::InstructionMemory,
+    program_counter::PC, register::RegisterFile, utils::parse_as_instruction,
+};
+use std::path::Path;
+
+pub type ProgramInstruction = Bits<16>;
+pub type Program = Vec<ProgramInstruction>;
+type OpCode = Bits<4>;
+const OPCODE_HLT: Bits<4> = Bits {
+    bit_array: [true, false, false, false],
+};
+
+#[derive(Debug)]
+pub struct VM {
+    alu: Alu,
+    pub reg_file: RegisterFile,
+    control_rom: ControlRom,
+    instruction_memory: InstructionMemory,
+    pc: PC,
+}
+
+impl VM {
+    pub fn new() -> Self {
+        let alu = Alu::default();
+        let reg_file = RegisterFile::default();
+        let control_rom = ControlRom;
+        let instruction_memory = InstructionMemory::default();
+        let pc = PC::default();
+        VM {
+            alu,
+            reg_file,
+            control_rom,
+            instruction_memory,
+            pc,
+        }
+    }
+
+    pub fn execute_program(&mut self, file_path: impl AsRef<Path>) -> crate::Result<()> {
+        let file_path = file_path.as_ref();
+        self.load_program(file_path)?;
+        while self.clock() != OPCODE_HLT {}
+        Ok(())
+    }
+
+    pub fn load_program(&mut self, file_path: impl AsRef<Path>) -> crate::Result<()> {
+        let file_path = file_path.as_ref();
+        crate::parser::parse_program(file_path)?;
+        let path = Path::new(file_path).with_extension("mc");
+        let program = std::fs::read_to_string(path)?;
+        let content_bits = program
+            .lines()
+            .map(parse_as_instruction)
+            .collect::<Vec<_>>();
+        self.instruction_memory.load_instructions(content_bits)?;
+        Ok(())
+    }
+
+    pub fn process_instruction(&mut self, instruction: ProgramInstruction) {
+        let opcode = instruction.slice(12);
+        let control_signals = self.control_rom.get_control_signals(opcode);
+        self.alu.set_setting(control_signals.alu_settings);
+        if control_signals.enable {
+            self.reg_file.enable();
+        } else {
+            self.reg_file.disable();
+        }
+        let r1 = instruction.slice(8);
+        let r2 = instruction.slice(4);
+        let mut write_adress = instruction.slice(0);
+        self.reg_file.set_read_addresses([r1, r2]);
+        let [a, mut b] = self.reg_file.read_outputs;
+        if control_signals.alu_mux {
+            b = instruction.slice(0);
+        }
+        let mut data = self.alu.compute(a, b);
+        if control_signals.data_mux {
+            data = instruction.slice(0);
+        }
+        if control_signals.dest_mux {
+            write_adress = r1;
+        }
+        self.reg_file.schedule_write(write_adress, data);
+    }
+
+    fn clock(&mut self) -> OpCode {
+        let instr_adr = self.pc.clock().to_usize();
+        if instr_adr >= self.instruction_memory.instructions.len() {
+            return OPCODE_HLT;
+        }
+        let instruction = self.instruction_memory.instructions[instr_adr];
+        self.process_instruction(instruction);
+        self.reg_file.clock();
+        instruction.slice(12)
+    }
+}
+
+// ...existing code...
+
+impl Default for VM {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+#[cfg(test)]
+mod tests;

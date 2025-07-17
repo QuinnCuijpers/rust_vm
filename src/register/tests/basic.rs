@@ -3,7 +3,7 @@ use std::str::FromStr;
 use super::super::*;
 use crate::assert_bits;
 #[test]
-fn test_write_and_clock_propagates_to_both_banks() {
+fn write_and_clock_propagates_to_both_banks() {
     let mut reg_file = RegisterFile::default();
     reg_file.enable();
 
@@ -18,7 +18,7 @@ fn test_write_and_clock_propagates_to_both_banks() {
 }
 
 #[test]
-fn test_update_read_reads_correct_value() {
+fn update_read_reads_correct_value() {
     let mut reg_file = RegisterFile::default();
     reg_file.enable();
 
@@ -34,7 +34,7 @@ fn test_update_read_reads_correct_value() {
 }
 
 #[test]
-fn test_sequential_write_and_read() {
+fn sequential_write_and_read() {
     let mut reg_file = RegisterFile::default();
     reg_file.enable();
 
@@ -51,7 +51,7 @@ fn test_sequential_write_and_read() {
 }
 
 #[test]
-fn test_dual_read_same_value() {
+fn dual_read_same_value() {
     let mut reg_file = RegisterFile::default();
     reg_file.enable();
 

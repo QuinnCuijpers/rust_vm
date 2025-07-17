@@ -23,7 +23,7 @@ fn parse_too_long_string() {
 }
 
 #[test]
-fn test_parse_too_large_number() {
+fn parse_too_large_number() {
     // Try to parse a number that exceeds the maximum for Bits<8>
     let out = Bits::<8>::from_str("256");
     assert_eq!(

@@ -1,7 +1,7 @@
 use super::super::*;
 
 #[test]
-fn test_iteration() {
+fn iteration() {
     let bits = Bits::<4>::from([true, false, true, false]);
     let mut iter = bits.iter();
     assert_eq!(iter.next(), Some(&true));
@@ -9,7 +9,7 @@ fn test_iteration() {
 }
 
 #[test]
-fn test_mutable_iteration() {
+fn mutable_iteration() {
     let mut bits = Bits::<4>::from([false; 4]);
     for bit in bits.iter_mut() {
         *bit = true;
@@ -18,7 +18,7 @@ fn test_mutable_iteration() {
 }
 
 #[test]
-fn test_into_iter() {
+fn into_iter() {
     let bits = Bits::<3>::from([true, false, true]);
     let collected: Vec<bool> = bits.into_iter().collect();
     assert_eq!(collected, vec![true, false, true]);

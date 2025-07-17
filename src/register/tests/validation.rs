@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use super::super::*;
 #[test]
-fn test_zero_index_is_ignored() {
+fn zero_index_is_ignored() {
     let mut reg_file = RegisterFile::default();
     reg_file.enable();
 
@@ -15,7 +15,7 @@ fn test_zero_index_is_ignored() {
 }
 
 #[test]
-fn test_read_zero_address_no_update() {
+fn read_zero_address_no_update() {
     let mut reg_file = RegisterFile::default();
     reg_file.enable();
 
@@ -26,7 +26,7 @@ fn test_read_zero_address_no_update() {
 }
 
 #[test]
-fn test_read_from_0() {
+fn read_from_0() {
     let mut reg_file = RegisterFile::default();
     reg_file.enable();
 

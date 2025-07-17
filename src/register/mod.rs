@@ -1,18 +1,19 @@
 use crate::bits::Bits;
 
-// TODO: improve magic numbers in file
 const REGISTER_BANK_SIZE: usize = 16;
 const REGISTER_SIZE: usize = 8; // Number of registers in each bank
 
-pub type Register = Bits<REGISTER_SIZE>; // Assuming 8-bit registers
+pub type Register = Bits<REGISTER_SIZE>;
 pub type RegisterBank = [Register; REGISTER_BANK_SIZE];
+type Immediate = Bits<8>;
+type RegisterIndex = Bits<4>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct RegisterFile {
     pub(crate) register_banks: [RegisterBank; 2], // Two sets of 16 registers, for simulated dual read
     enabled: bool,
-    write_buffer: Vec<(Bits<4>, Bits<8>)>,
-    read_addresses: [Bits<4>; 2],
+    write_buffer: Vec<(RegisterIndex, Immediate)>,
+    read_addresses: [RegisterIndex; 2],
     pub(crate) read_outputs: [Register; 2],
 }
 
@@ -25,13 +26,12 @@ impl RegisterFile {
         }
     }
     #[inline]
-    fn is_valid_index(&self, index: Bits<4>) -> bool {
+    fn is_valid_index(&self, index: RegisterIndex) -> bool {
         let index = index.to_usize();
         index < self.register_banks[0].len()
     }
 
-    // TODO: return Result
-    pub(crate) fn set_read_addresses(&mut self, indexes: [Bits<4>; 2]) {
+    pub(crate) fn set_read_addresses(&mut self, indexes: [RegisterIndex; 2]) {
         if self.enabled {
             for (r, &index) in indexes.iter().enumerate() {
                 if self.is_valid_index(index) {
@@ -42,7 +42,7 @@ impl RegisterFile {
         }
     }
 
-    pub(crate) fn schedule_write(&mut self, index: Bits<4>, value: Bits<8>) {
+    pub(crate) fn schedule_write(&mut self, index: RegisterIndex, value: Immediate) {
         if self.is_valid_index(index) && index != Bits::from(0u8).resize::<4>() {
             self.write_buffer.push((index, value));
         }
@@ -81,7 +81,7 @@ impl RegisterFile {
 
     pub fn display(&self) {
         for (i, bank) in self.register_banks.iter().enumerate() {
-            print!("Register Bank {}: ", i);
+            print!("Register Bank {i}: ");
             for reg in bank.iter() {
                 print!("{} ", reg.to_usize());
             }

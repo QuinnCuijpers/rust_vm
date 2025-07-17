@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn test_addition() {
+fn addition() {
     let alu = Alu::new(AluSettings::Add);
     assert_bits!(alu.compute(bits_8!(0), bits_8!(0)), "00000000");
     assert_bits!(alu.compute(bits_8!(1), bits_8!(1)), "00000010");
@@ -10,7 +10,7 @@ fn test_addition() {
 }
 
 #[test]
-fn test_subtraction() {
+fn subtraction() {
     let alu = Alu::new(AluSettings::Sub);
     assert_bits!(alu.compute(bits_8!(0), bits_8!(0)), "00000000");
     assert_bits!(alu.compute(bits_8!(5), bits_8!(3)), "00000010");
@@ -20,7 +20,7 @@ fn test_subtraction() {
 }
 
 #[test]
-fn test_addition_edge_cases() {
+fn addition_edge_cases() {
     let alu = Alu::new(AluSettings::Add);
     assert_bits!(alu.compute(bits_8!(0), bits_8!(255)), "11111111");
     assert_bits!(alu.compute(bits_8!(255), bits_8!(0)), "11111111");
@@ -29,7 +29,7 @@ fn test_addition_edge_cases() {
 }
 
 #[test]
-fn test_subtraction_edge_cases() {
+fn subtraction_edge_cases() {
     let alu = Alu::new(AluSettings::Sub);
     assert_bits!(alu.compute(bits_8!(255), bits_8!(255)), "00000000");
     assert_bits!(alu.compute(bits_8!(1), bits_8!(255)), "00000010");

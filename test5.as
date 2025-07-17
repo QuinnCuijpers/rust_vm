@@ -1,0 +1,4 @@
+INC r1
+INC r1
+INC r1
+HLT

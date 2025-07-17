@@ -1,28 +1,32 @@
 use crate::bits::Bits;
 
-type ProgramInstruction = [Bits<4>; 4];
+type ProgramInstruction = Bits<16>;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct InstructionMemory {
-    pub(crate) instructions: [[Bits<4>; 4]; 1024],
+    pub(crate) instructions: [ProgramInstruction; 1024],
 }
 
 impl Default for InstructionMemory {
     fn default() -> Self {
-        InstructionMemory {
-            instructions: [[Bits::from(0u8).resize(); 4]; 1024],
+        Self {
+            instructions: [Bits::from(0u16); 1024],
         }
     }
 }
 
 impl InstructionMemory {
-    pub(crate) fn load_instructions(&mut self, instructions: Vec<ProgramInstruction>) {
+    pub(crate) fn load_instructions(
+        &mut self,
+        instructions: Vec<ProgramInstruction>,
+    ) -> crate::Result<()> {
         for (i, instruction) in instructions.into_iter().enumerate() {
             if i < self.instructions.len() {
                 self.instructions[i] = instruction;
             } else {
-                panic!("Instruction memory overflow");
+                return Err(crate::Error::InstructionMemoryOverflow);
             }
         }
+        Ok(())
     }
 }
 
@@ -30,20 +34,19 @@ impl InstructionMemory {
 mod tests {
     use super::*;
 
-    fn make_instruction(val: u8) -> ProgramInstruction {
-        [
-            Bits::from(val).resize(),
-            Bits::from(val).resize(),
-            Bits::from(val).resize(),
-            Bits::from(val).resize(),
-        ]
+    fn make_instruction(val: u16) -> ProgramInstruction {
+        Bits::from(val)
     }
 
+    #[allow(clippy::panic)]
     #[test]
-    #[should_panic(expected = "Instruction memory overflow")]
-    fn test_load_instructions_overflow_panics() {
+    fn load_instructions_overflow_panics() {
         let mut mem = InstructionMemory::default();
         let instructions = vec![make_instruction(0); 1025];
-        mem.load_instructions(instructions);
+        let err = mem.load_instructions(instructions);
+        match err {
+            Err(crate::Error::InstructionMemoryOverflow) => {}
+            _ => panic!("Expected InstructionMemoryOverflow error"),
+        }
     }
 }

@@ -1,6 +1,6 @@
 use super::super::*;
 #[test]
-fn test_parse_instruction_valid() {
+fn parse_instruction_valid() {
     assert_eq!(parse_instruction("ADD").unwrap().to_string(), "0010");
     assert_eq!(parse_instruction("SUB").unwrap().to_string(), "0011");
     assert_eq!(parse_instruction("AND").unwrap().to_string(), "0100");
@@ -10,7 +10,7 @@ fn test_parse_instruction_valid() {
 }
 
 #[test]
-fn test_parse_instruction_invalid() {
+fn parse_instruction_invalid() {
     let result = parse_instruction("FOO");
     assert!(result.is_err());
     let err = result.unwrap_err().to_string();

@@ -3,27 +3,27 @@ use std::str::FromStr;
 use crate::bits::{Bits, BitsParseError};
 
 #[test]
-fn test_display_outputs_big_endian_string() {
+fn display_outputs_big_endian_string() {
     // Internally: little-endian [false, false, false, true] => binary 1000 => string "1000" (MSB first)
     let bits = Bits {
         bit_array: [false, false, false, true],
     }; // little-endian: 0 + 0*2 + 0*4 + 1*8 = 8
 
-    let display = format!("{}", bits);
+    let display = format!("{bits}");
     assert_eq!(display, "1000");
 }
 
 #[test]
-fn test_display_and_parse_roundtrip() {
+fn display_and_parse_roundtrip() {
     let original = Bits::<4>::from_str("1010").unwrap();
-    let rendered = format!("{}", original);
+    let rendered = format!("{original}");
     let reparsed = Bits::<4>::from_str(&rendered).unwrap();
 
     assert_eq!(original, reparsed);
 }
 
 #[test]
-fn test_bits_parse_error_display() {
+fn bits_parse_error_display() {
     let error = BitsParseError::Length {
         expected: 4,
         found: 5,

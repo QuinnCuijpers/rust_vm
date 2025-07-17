@@ -3,13 +3,13 @@ use std::fs::File;
 use std::io::Write;
 
 #[test]
-fn test_parse_program() {
+fn parse_program_exec() {
     let result = parse_program("test.as");
     assert!(result.is_ok());
 }
 
 #[test]
-fn test_parse_program_file_not_found() {
+fn parse_program_file_not_found() {
     let result = parse_program("nonexistent_file.as");
     assert!(result.is_err());
     let err = result.unwrap_err().to_string();
@@ -17,7 +17,7 @@ fn test_parse_program_file_not_found() {
 }
 
 #[test]
-fn test_parse_program_with_empty_lines_and_short_lines() {
+fn parse_program_with_empty_lines_and_short_lines() {
     let test_file = "empty_and_short_lines.as";
     let mut file = File::create(test_file).unwrap();
     writeln!(file).unwrap(); // empty line

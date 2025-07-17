@@ -5,6 +5,7 @@ macro_rules! bits_8 {
             $num <= 0xFF,
             "bits_8! only accepts values fitting in 8 bits"
         );
+        use $crate::bits::Bits;
         Bits::<8>::from($num as u8)
     }};
 }

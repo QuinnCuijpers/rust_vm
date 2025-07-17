@@ -9,63 +9,65 @@ pub(crate) struct ControlSignals {
     pub(crate) enable: bool,
     pub(crate) data_mux: bool,
     pub(crate) dest_mux: bool,
+    pub(crate) alu_mux: bool,
 }
 
 impl ControlRom {
     pub(crate) fn get_control_signals(&self, opcode: Bits<4>) -> ControlSignals {
         match opcode.to_string().as_str() {
             "0000" => ControlSignals {
-                alu_settings: AluSettings::default(),
                 enable: false,
-                data_mux: false,
-                dest_mux: false,
+                ..Default::default()
             },
             "0001" => ControlSignals {
-                ..Default::default() // NOP instruction does not use ALU, no control signals needed
+                enable: false,
+                ..Default::default()
             },
             "0010" => ControlSignals {
                 alu_settings: AluSettings::Add,
                 enable: true,
-                data_mux: false,
-                dest_mux: false,
+                ..Default::default()
             },
             "0011" => ControlSignals {
                 alu_settings: AluSettings::Sub,
                 enable: true,
-                data_mux: false,
-                dest_mux: false,
+                ..Default::default()
             },
             "0100" => ControlSignals {
                 alu_settings: AluSettings::And,
                 enable: true,
-                data_mux: false,
-                dest_mux: false,
+                ..Default::default()
             },
             "0101" => ControlSignals {
                 alu_settings: AluSettings::Nor,
                 enable: true,
-                data_mux: false,
-                dest_mux: false,
+                ..Default::default()
             },
             "0110" => ControlSignals {
                 alu_settings: AluSettings::Xor,
                 enable: true,
-                data_mux: false,
-                dest_mux: false,
+                ..Default::default()
             },
             "0111" => ControlSignals {
                 alu_settings: AluSettings::Rshift,
                 enable: true,
-                data_mux: false,
-                dest_mux: false,
+                ..Default::default()
             },
             "1000" => ControlSignals {
-                alu_settings: AluSettings::default(), // Assuming LDI does not use ALU
                 enable: true,
                 data_mux: true,
                 dest_mux: true,
+                ..Default::default()
             },
-            _ => panic!("Not yet implemented"),
+            "1001" => ControlSignals {
+                alu_settings: AluSettings::Add,
+                enable: true,
+                dest_mux: true,
+                alu_mux: true,
+                ..Default::default()
+            },
+            #[allow(clippy::panic)]
+            _ => panic!("Not yet implemented"), //eventually unreachable
         }
     }
 }
