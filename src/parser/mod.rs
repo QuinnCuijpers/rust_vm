@@ -2,6 +2,7 @@ use std::path::Path;
 use std::{fs, str::FromStr};
 
 use crate::bits::Bits;
+use crate::program_counter::Address;
 use crate::Result;
 
 #[derive(Debug)]
@@ -75,6 +76,18 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
                     return Err(ParserError::MissingOperand(line.to_string()).into());
                 }
             }
+            "JMP" => {
+                let a = match operands.next() {
+                    Some(op) => op,
+                    None => return Err(ParserError::MissingOperand(line.to_string()).into()),
+                };
+                if operands.next().is_some() {
+                    return Err(ParserError::MissingOperand(line.to_string()).into());
+                }
+                out.push(parse_instruction("JMP").unwrap().to_string());
+                out.push(Bits::<2>::from_str("00").unwrap().to_string());
+                out.push(parse_address(a)?.to_string());
+            }
             "LDI" | "ADI" => {
                 let a = match operands.next() {
                     Some(op) => op,
@@ -142,6 +155,10 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
     Ok(())
 }
 
+fn parse_address(a: &str) -> Result<Address> {
+    Ok(Bits::from_str(a)?)
+}
+
 #[allow(clippy::unwrap_used)]
 fn parse_instruction(instruction: &str) -> Result<Bits<4>> {
     let instruction_bits: Bits<4> = match instruction {
@@ -155,6 +172,7 @@ fn parse_instruction(instruction: &str) -> Result<Bits<4>> {
         "RSH" => Bits::from_str("0111").unwrap(),
         "LDI" => Bits::from_str("1000").unwrap(),
         "ADI" => Bits::from_str("1001").unwrap(),
+        "JMP" => Bits::from_str("1010").unwrap(),
         &_ => return Err(ParserError::InvalidInstruction(instruction.to_string()).into()),
     };
     Ok(instruction_bits)

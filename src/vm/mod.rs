@@ -59,8 +59,15 @@ impl VM {
     pub fn process_instruction(&mut self, instruction: ProgramInstruction) {
         let opcode = instruction.slice(12);
         let control_signals = self.control_rom.get_control_signals(opcode);
+
+        let current_pc = self.pc.value;
+        let mut next_pc = current_pc + Bits::from(1u16).resize::<10>();
+        if control_signals.addr_mux {
+            next_pc = instruction.slice(0);
+        }
+
         self.alu.set_setting(control_signals.alu_settings);
-        if control_signals.enable {
+        if control_signals.reg_file_enable {
             self.reg_file.enable();
         } else {
             self.reg_file.disable();
@@ -81,9 +88,11 @@ impl VM {
             write_adress = r1;
         }
         self.reg_file.schedule_write(write_adress, data);
+        self.pc.value = next_pc;
     }
 
     fn clock(&mut self) -> OpCode {
+        // TODO: increment the program counter
         let instr_adr = self.pc.clock().to_usize();
         if instr_adr >= self.instruction_memory.instructions.len() {
             return OPCODE_HLT;

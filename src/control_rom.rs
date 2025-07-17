@@ -6,64 +6,69 @@ pub(crate) struct ControlRom;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) struct ControlSignals {
     pub(crate) alu_settings: AluSettings,
-    pub(crate) enable: bool,
+    pub(crate) reg_file_enable: bool,
     pub(crate) data_mux: bool,
     pub(crate) dest_mux: bool,
     pub(crate) alu_mux: bool,
+    pub(crate) addr_mux: bool,
 }
 
 impl ControlRom {
     pub(crate) fn get_control_signals(&self, opcode: Bits<4>) -> ControlSignals {
         match opcode.to_string().as_str() {
             "0000" => ControlSignals {
-                enable: false,
+                reg_file_enable: false,
                 ..Default::default()
             },
             "0001" => ControlSignals {
-                enable: false,
+                reg_file_enable: false,
                 ..Default::default()
             },
             "0010" => ControlSignals {
                 alu_settings: AluSettings::Add,
-                enable: true,
+                reg_file_enable: true,
                 ..Default::default()
             },
             "0011" => ControlSignals {
                 alu_settings: AluSettings::Sub,
-                enable: true,
+                reg_file_enable: true,
                 ..Default::default()
             },
             "0100" => ControlSignals {
                 alu_settings: AluSettings::And,
-                enable: true,
+                reg_file_enable: true,
                 ..Default::default()
             },
             "0101" => ControlSignals {
                 alu_settings: AluSettings::Nor,
-                enable: true,
+                reg_file_enable: true,
                 ..Default::default()
             },
             "0110" => ControlSignals {
                 alu_settings: AluSettings::Xor,
-                enable: true,
+                reg_file_enable: true,
                 ..Default::default()
             },
             "0111" => ControlSignals {
                 alu_settings: AluSettings::Rshift,
-                enable: true,
+                reg_file_enable: true,
                 ..Default::default()
             },
             "1000" => ControlSignals {
-                enable: true,
+                reg_file_enable: true,
                 data_mux: true,
                 dest_mux: true,
                 ..Default::default()
             },
             "1001" => ControlSignals {
                 alu_settings: AluSettings::Add,
-                enable: true,
+                reg_file_enable: true,
                 dest_mux: true,
                 alu_mux: true,
+                ..Default::default()
+            },
+            "1010" => ControlSignals {
+                addr_mux: true,
                 ..Default::default()
             },
             #[allow(clippy::panic)]
@@ -82,7 +87,7 @@ mod tests {
             set,
             ControlSignals {
                 alu_settings: AluSettings::Add,
-                enable: true,
+                reg_file_enable: true,
                 ..Default::default()
             }
         );
@@ -95,7 +100,7 @@ mod tests {
             set,
             ControlSignals {
                 alu_settings: AluSettings::Sub,
-                enable: true,
+                reg_file_enable: true,
                 ..Default::default()
             }
         );
@@ -108,7 +113,7 @@ mod tests {
             set,
             ControlSignals {
                 alu_settings: AluSettings::And,
-                enable: true,
+                reg_file_enable: true,
                 ..Default::default()
             }
         );
@@ -121,7 +126,7 @@ mod tests {
             set,
             ControlSignals {
                 alu_settings: AluSettings::Nor,
-                enable: true,
+                reg_file_enable: true,
                 ..Default::default()
             }
         );
@@ -134,7 +139,7 @@ mod tests {
             set,
             ControlSignals {
                 alu_settings: AluSettings::Xor,
-                enable: true,
+                reg_file_enable: true,
                 ..Default::default()
             }
         );
@@ -147,7 +152,7 @@ mod tests {
             set,
             ControlSignals {
                 alu_settings: AluSettings::Rshift,
-                enable: true,
+                reg_file_enable: true,
                 ..Default::default()
             }
         );

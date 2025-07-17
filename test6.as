@@ -1,0 +1,7 @@
+LDI r1 0
+JMP 3
+ADD r1 r1 r1
+INC r1
+JMP 7
+DEC r1
+HLT
