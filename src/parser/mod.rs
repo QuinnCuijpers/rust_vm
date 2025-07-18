@@ -1,49 +1,29 @@
-use std::fs;
 use std::path::Path;
-use std::str::FromStr;
 
 use crate::bits::Bits;
-use crate::program_counter::Address;
 use crate::Result;
+use error::ParserError;
+use std::str::FromStr;
 
-// TODO: split parser into multiple files for better organization
-#[derive(Debug)]
-pub enum ParserError {
-    FileNotFound(String),
-    InvalidInstruction(String),
-    MissingOperand(String),
-}
+use utils::{parse_address, parse_cond, parse_instruction, parse_register_string};
 
-impl std::fmt::Display for ParserError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ParserError::FileNotFound(file) => write!(f, "File not found: {file}"),
-            ParserError::InvalidInstruction(instr) => write!(f, "Invalid instruction: {instr}"),
-            ParserError::MissingOperand(line) => write!(f, "Missing operand in line: {line}"),
-        }
-    }
-}
+pub(crate) use utils::parse_as_instruction;
 
-impl std::error::Error for ParserError {}
-
-// TODO: add proper error
-fn parse_register_string(s: &str) -> Result<Bits<4>> {
-    if s.len() < 2 || !s.starts_with('r') {
-        return Err(ParserError::InvalidInstruction(s.to_string()).into());
-    }
-    Ok(Bits::from_str(&s[1..])?)
-}
+pub mod error;
+mod utils;
 
 #[allow(clippy::unwrap_used)]
+#[allow(unused_variables)] // TODO: remove unused variables
 pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
     let mut output_lines = vec![];
 
     let path = file_path.as_ref();
-    let content = std::fs::read_to_string(path)
+    let mut content = std::fs::read_to_string(path)
         .map_err(|_| ParserError::FileNotFound(path.display().to_string()))?;
-    let lines = content.lines();
 
-    for line in lines {
+    let mut labels = std::collections::HashMap::new();
+    let content = utils::find_and_remove_labels(&mut content, &mut labels)?;
+    for (pc, line) in content.iter().enumerate() {
         let mut out = vec![];
         let mut splitted = line.split_whitespace();
         let instruction = match splitted.next() {
@@ -88,7 +68,7 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
                 }
                 out.push(parse_instruction("JMP").unwrap().to_string());
                 out.push(Bits::<2>::from_str("00").unwrap().to_string());
-                out.push(parse_address(a)?.to_string());
+                out.push(parse_address(a, &mut labels)?.to_string());
             }
             "CMP" => {
                 let a = match operands.next() {
@@ -176,7 +156,7 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
                 }
                 out.push(parse_instruction("BRH").unwrap().to_string());
                 out.push(parse_cond(a)?.to_string());
-                out.push(parse_address(addr)?.to_string());
+                out.push(parse_address(addr, &mut labels)?.to_string());
             }
             _ => return Err(ParserError::InvalidInstruction(instruction.to_string()).into()),
         }
@@ -184,46 +164,11 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
     }
 
     use std::io::Write;
-    let mut output_file = fs::File::create(path.with_extension("mc"))?;
+    let mut output_file = std::fs::File::create(path.with_extension("mc"))?;
     for l in output_lines {
         writeln!(output_file, "{l}")?
     }
     Ok(())
-}
-
-#[allow(clippy::unwrap_used)]
-fn parse_cond(a: &str) -> Result<Bits<2>> {
-    match a {
-        "zero" | "=" => Ok(Bits::from_str("00").unwrap()),
-        "notzero" | "!=" => Ok(Bits::from_str("01").unwrap()),
-        "carry" | ">=" => Ok(Bits::from_str("10").unwrap()),
-        "notcarry" | "<" => Ok(Bits::from_str("11").unwrap()),
-        _ => Err(ParserError::InvalidInstruction(a.to_string()).into()),
-    }
-}
-
-fn parse_address(a: &str) -> Result<Address> {
-    Ok(Bits::from_str(a)?)
-}
-
-#[allow(clippy::unwrap_used)]
-fn parse_instruction(instruction: &str) -> Result<Bits<4>> {
-    let instruction_bits: Bits<4> = match instruction {
-        "NOP" => Bits::from_str("0000").unwrap(),
-        "HLT" => Bits::from_str("0001").unwrap(),
-        "ADD" => Bits::from_str("0010").unwrap(),
-        "SUB" => Bits::from_str("0011").unwrap(),
-        "AND" => Bits::from_str("0100").unwrap(),
-        "NOR" => Bits::from_str("0101").unwrap(),
-        "XOR" => Bits::from_str("0110").unwrap(),
-        "RSH" => Bits::from_str("0111").unwrap(),
-        "LDI" => Bits::from_str("1000").unwrap(),
-        "ADI" => Bits::from_str("1001").unwrap(),
-        "JMP" => Bits::from_str("1010").unwrap(),
-        "BRH" => Bits::from_str("1011").unwrap(),
-        &_ => return Err(ParserError::InvalidInstruction(instruction.to_string()).into()),
-    };
-    Ok(instruction_bits)
 }
 
 #[cfg(test)]

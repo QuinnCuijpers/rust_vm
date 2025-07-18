@@ -1,5 +1,5 @@
-use crate::bits::BitsParseError;
-use crate::parser::ParserError;
+use crate::BitsParseError;
+use crate::ParserError;
 use std::fmt;
 use std::io;
 

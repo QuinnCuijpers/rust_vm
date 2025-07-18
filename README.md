@@ -5,11 +5,12 @@ This project implements a simple virtual machine in Rust, inspired by [mattbattw
 ## Features
 
 - **Parser:**  
-  Parses assembly-like instructions from files into `.mc` machine code files, with robust error handling for missing operands, invalid instructions, and file errors.
+  Parses assembly-like instructions, supports labels, and provides robust error handling for missing operands, invalid instructions, undefined labels, and file errors.
 
 - **Arithmetic Logic Unit (ALU):**  
   Performs operations on 8-bit values using a custom `Bits` struct (array of booleans).  
-  Implements a carry cancel adder (CCA) and supports multiple bitwise and arithmetic operations.
+  Implements a carry cancel adder (CCA) and supports multiple bitwise and arithmetic operations.  
+  Sets flags (zero, carry) after each operation, which are used for conditional branching.
 
 - **Register Bank:**  
   Simulated dual-read register bank with 16 registers per bank, supporting read, write, enable/disable, and validation logic.
@@ -45,6 +46,32 @@ Below are the supported instructions and their syntax:
 | `RSH`       | `RSH r1 r2`           | Right shift `r1` by 1, store result in `r2`      |
 | `NOP`       | `NOP`                 | No operation                                     |
 | `HLT`       | `HLT`                 | Halt execution                                   |
+| `BRH`      | `BRH cond addr`         | Branch to `addr` if condition `cond` is met      |
+| `JMP`       | `JMP addr`            | Jump to instruction at `addr`                    |
+
+**Pseudocode Instructions:**
+
+Some instructions are provided as convenient pseudocode and are automatically expanded to real instructions during parsing:
+| Pseudocode   | Expansion         | Description                        |
+|-------------|-------------------|------------------------------------|
+| `INC rX`    | `ADI rX 1`        | Increment register `rX` by 1       |
+| `DEC rX`    | `ADI rX 255`      | Decrement register `rX` by 1       |
+| `CMP rX rY` | `SUB rX rY r0`    | Compare `rX` and `rY`              |
+
+**BRH Supported Conditions:**
+
+| Condition | Syntax      | Meaning                       |
+|-----------|------------|-------------------------------|
+| zero      | `=` `eq` `z` `zero`      | Branch if result is zero         |
+| notzero   | `!=` `ne` `nz` `notzero` | Branch if result is not zero     |
+| carry     | `>=` `ge` `c` `carry`    | Branch if carry flag is set      |
+| notcarry  | `<` `lt` `nc` `notcarry` | Branch if carry flag is not set  |
+
+
+- **Labels:**  
+  You can define labels in your assembly code using `.label`. Branch/Jump instructions (`BRH`/`JMP`) can use labels as targets.
+
+-
 
 **Notes:**
 - Registers are specified as `r0`, `r1`, ..., `r15`.
@@ -84,15 +111,20 @@ fn main() {
 ### Example Assembly (`fib.as`)
 
 ```
-LDI r1 1
-LDI r2 1
-ADD r1 r2 r3
-ADD r2 r3 r4
-ADD r3 r4 r5
-HLT
+.fib LDI r1 8 
+    LDI r2 0
+    LDI r3 1
+    LDI r4 0
+.loop DEC r1
+    BRH nc .done
+    ADD r3 r0 r2
+    ADD r4 r0 r3
+    ADD r2 r3 r4
+    JMP .loop
+.done HLT
 ```
 
-This example computes the first few Fibonacci numbers and stores them in registers.  
+This example computes the 8th Fibonacci number and stores them in the 4th register.  
 You can modify `fib.as` to try your own programs!
 
 ## Testing & Coverage

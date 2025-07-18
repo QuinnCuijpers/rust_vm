@@ -1,6 +1,5 @@
-use crate::bits::Bits;
+use crate::{bits::Bits, ProgramInstruction};
 
-type ProgramInstruction = Bits<16>;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct InstructionMemory {
     pub(crate) instructions: [ProgramInstruction; 1024],

@@ -105,3 +105,10 @@ fn vm_program_8() {
     let mut vm = VM::default();
     vm.execute_program("test8.as").unwrap();
 }
+
+#[test]
+fn vm_fib_2() {
+    let mut vm = VM::default();
+    vm.execute_program("fib2.as").unwrap();
+    assert_eq!(vm.reg_file.register_banks[0][3].to_usize(), 13);
+}

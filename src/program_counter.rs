@@ -1,6 +1,5 @@
-use crate::bits::Bits;
+use crate::Address;
 
-pub(crate) type Address = Bits<10>;
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct PC {
     pub(crate) value: Address,

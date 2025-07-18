@@ -1,12 +1,10 @@
 use crate::{
     alu::Alu, bits::Bits, control_rom::ControlRom, instruction_memory::InstructionMemory,
-    program_counter::PC, register::RegisterFile, utils::parse_as_instruction,
+    parser::parse_as_instruction, program_counter::PC, register::RegisterFile, OpCode,
+    ProgramInstruction,
 };
 use std::path::Path;
 
-pub type ProgramInstruction = Bits<16>;
-pub type Program = Vec<ProgramInstruction>;
-type OpCode = Bits<4>;
 const OPCODE_HLT: Bits<4> = Bits {
     bit_array: [true, false, false, false],
 };

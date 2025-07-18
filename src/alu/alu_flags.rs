@@ -1,6 +1,4 @@
-use crate::bits::Bits;
-
-pub(crate) type Condition = Bits<2>;
+use crate::Condition;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) struct AluFlags {
