@@ -22,16 +22,16 @@ pub(super) fn parse_cond(a: &str) -> Result<Bits<2>> {
 }
 
 pub(super) fn parse_address(
-    a: &str,
+    addr: &str,
     labels: &mut std::collections::HashMap<String, Address>,
 ) -> Result<Address> {
-    if a.starts_with(".") {
-        if let Some(addr) = labels.get(a) {
+    if addr.starts_with(".") {
+        if let Some(addr) = labels.get(addr) {
             return Ok(*addr);
         }
-        return Err(ParserError::UndefinedLabel(a.to_string()).into());
+        return Err(ParserError::UndefinedLabel(addr.to_string()).into());
     }
-    Ok(Bits::from_str(a)?)
+    Ok(Bits::from_str(addr)?)
 }
 
 #[allow(clippy::unwrap_used)]
@@ -89,6 +89,24 @@ pub(crate) fn find_and_remove_labels(
             line = line.trim_start();
             out.push(line.to_string());
         }
+    }
+    Ok(out)
+}
+
+pub(crate) fn extract_n_operands<'a>(
+    n: usize,
+    operands: &mut impl Iterator<Item = &'a str>,
+    line: &str,
+) -> Result<Vec<&'a str>> {
+    let mut out = Vec::with_capacity(n);
+    for _ in 0..n {
+        match operands.next() {
+            Some(op) => out.push(op),
+            None => return Err(ParserError::MissingOperand(line.to_string()).into()),
+        }
+    }
+    for op in operands.by_ref() {
+        out.push(op);
     }
     Ok(out)
 }

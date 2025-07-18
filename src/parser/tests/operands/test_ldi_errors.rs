@@ -7,7 +7,7 @@ use crate::{bits::BitsParseError, error::VmError};
 
 #[test]
 fn ldi_missing_value_operand() {
-    let test_file = "ldi_missing_value.as";
+    let test_file: &Path = "ldi_missing_value.as".as_ref();
     std::fs::write(test_file, "LDI r1").unwrap();
     let err = parse_program(test_file).unwrap_err();
     match err {
@@ -30,7 +30,7 @@ fn ldi_too_many_operands() {
         VmError::Parser(ParserError::MissingOperand(ref line)) => {
             assert!(line.contains("LDI r1 42 extra"))
         }
-        _ => panic!("Expected MissingOperand error"),
+        _ => panic!("Expected TooManyOperands error"),
     }
     std::fs::remove_file(test_file).unwrap();
 }
