@@ -1,3 +1,5 @@
+use crate::call_stack::CallStack;
+use crate::control_rom::AddrMux;
 use crate::{
     alu::Alu, bits::Bits, control_rom::ControlRom, instruction_memory::InstructionMemory,
     parser::parse_as_instruction, program_counter::PC, register::RegisterFile, OpCode,
@@ -16,6 +18,7 @@ pub struct VM {
     control_rom: ControlRom,
     instruction_memory: InstructionMemory,
     pc: PC,
+    call_stack: CallStack,
 }
 
 impl VM {
@@ -25,12 +28,14 @@ impl VM {
         let control_rom = ControlRom;
         let instruction_memory = InstructionMemory::default();
         let pc = PC::default();
+        let call_stack = CallStack::new();
         VM {
             alu,
             reg_file,
             control_rom,
             instruction_memory,
             pc,
+            call_stack,
         }
     }
 
@@ -59,10 +64,21 @@ impl VM {
         let control_signals = self.control_rom.get_control_signals(opcode);
 
         let current_pc = self.pc.value;
-        let mut next_pc = current_pc + Bits::from(1u16).resize::<10>();
-        if control_signals.addr_mux {
-            next_pc = instruction.slice(0);
-        }
+        let pc_inc = current_pc + Bits::from(1u16).resize::<10>();
+        let mut next_pc = match control_signals.addr_mux {
+            AddrMux::Increment => pc_inc,
+            AddrMux::Jump => instruction.slice(0),
+            AddrMux::Return => {
+                match self.call_stack.pop() {
+                    Some(addr) => addr,
+                    None => {
+                        // TODO add proper error handling
+                        eprintln!("Call stack underflow, returning to next instruction");
+                        pc_inc
+                    }
+                }
+            }
+        };
         if control_signals.is_branch {
             let condition = instruction.slice(10);
             if self.alu.flags.cond_true(condition) {

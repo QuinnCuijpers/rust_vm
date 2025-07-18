@@ -4,6 +4,7 @@
 
 mod alu;
 mod bits;
+mod call_stack;
 mod control_rom;
 mod error;
 mod instruction_memory;

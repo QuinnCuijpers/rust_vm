@@ -4,15 +4,24 @@ use crate::{alu::AluSettings, bits::Bits};
 pub(crate) struct ControlRom;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub(crate) enum AddrMux {
+    #[default]
+    Increment,
+    Jump,
+    Return,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) struct ControlSignals {
     pub(crate) alu_settings: AluSettings,
     pub(crate) reg_file_enable: bool,
     pub(crate) data_mux: bool,
     pub(crate) dest_mux: bool,
     pub(crate) alu_mux: bool,
-    pub(crate) addr_mux: bool,
+    pub(crate) addr_mux: AddrMux,
     pub(crate) is_branch: bool,
     pub(crate) set_flags: bool,
+    pub(crate) is_call: bool,
 }
 
 impl ControlRom {
@@ -80,13 +89,21 @@ impl ControlRom {
                 ..Default::default()
             },
             "1010" => ControlSignals {
-                addr_mux: true,
+                addr_mux: AddrMux::Jump,
                 set_flags: false,
                 ..Default::default()
             },
             "1011" => ControlSignals {
                 is_branch: true,
                 set_flags: false,
+                ..Default::default()
+            },
+            "1100" => ControlSignals {
+                is_call: true,
+                ..Default::default()
+            },
+            "1101" => ControlSignals {
+                addr_mux: AddrMux::Return,
                 ..Default::default()
             },
             #[allow(clippy::panic)]

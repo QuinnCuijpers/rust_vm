@@ -32,7 +32,7 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
         };
         let mut operands = splitted;
         match instruction {
-            "NOP" | "HLT" => {
+            "NOP" | "HLT" | "RET" => {
                 let ops = extract_n_operands(0, &mut operands, line)?;
                 let [] = ops.as_slice() else {
                     return Err(ParserError::MissingOperand(line.to_string()).into());
@@ -56,12 +56,12 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
                     out.push(Bits::from(255u8).to_string());
                 }
             }
-            "JMP" => {
+            "JMP" | "CAL" => {
                 let ops = extract_n_operands(1, &mut operands, line)?;
                 let [addr] = ops.as_slice() else {
                     return Err(ParserError::MissingOperand(line.to_string()).into());
                 };
-                out.push(parse_instruction("JMP").unwrap().to_string());
+                out.push(parse_instruction(instruction).unwrap().to_string());
                 out.push(Bits::<2>::from_str("00").unwrap().to_string());
                 out.push(parse_address(addr, &mut labels)?.to_string());
             }

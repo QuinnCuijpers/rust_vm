@@ -112,3 +112,9 @@ fn vm_fib_2() {
     vm.execute_program("fib2.as").unwrap();
     assert_eq!(vm.reg_file.register_banks[0][3].to_usize(), 13);
 }
+
+#[test]
+fn vm_program_9() {
+    let mut vm = VM::default();
+    vm.execute_program("test9.as").unwrap();
+}

@@ -46,8 +46,10 @@ Below are the supported instructions and their syntax:
 | `RSH`       | `RSH r1 r2`           | Right shift `r1` by 1, store result in `r2`      |
 | `NOP`       | `NOP`                 | No operation                                     |
 | `HLT`       | `HLT`                 | Halt execution                                   |
-| `BRH`      | `BRH cond addr`         | Branch to `addr` if condition `cond` is met      |
+| `BRH`       | `BRH cond addr`        | Branch to `addr` if condition `cond` is met      |
 | `JMP`       | `JMP addr`            | Jump to instruction at `addr`                    |
+| `CAL`       | `CAL addr`            | Call subroutine at `addr` (pushes return address)|
+| `RET`       | `RET`                 | Return from subroutine (pops return address)     |
 
 **Pseudocode Instructions:**
 
@@ -79,15 +81,20 @@ Some instructions are provided as convenient pseudocode and are automatically ex
 - Immediate values (for `LDI`) must fit in 8 bits.
 - All instructions and operands are space-separated.
 - Extra or missing operands will result in a parse error.
+- `CAL` and `RET` provide basic subroutine call/return support.
+- The call stack has a maximum depth of 16; deeper recursion will cause overflow errors.
 
 **Example:**
 ```
-LDI r1 1
-LDI r2 1
-ADD r1 r2 r3
-RSH r3 r4
-NOP
-HLT
+    CAL .add3
+    HLT
+.add3 CAL .add1
+    CAL .add2
+    RET
+.add1 ADI r1 1
+    RET
+.add2 ADI r1 2
+    RET
 ```
 
 ## Usage
