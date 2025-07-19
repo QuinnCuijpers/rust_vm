@@ -1,9 +1,10 @@
-use crate::call_stack::CallStack;
 use crate::control_rom::AddrMux;
+use crate::registers::call_stack::CallStack;
+use crate::registers::Register;
 use crate::{
     alu::Alu, bits::Bits, control_rom::ControlRom, instruction_memory::InstructionMemory,
-    parser::parse_as_instruction, program_counter::PC, register::RegisterFile, OpCode,
-    ProgramInstruction,
+    parser::parse_as_instruction, program_counter::PC, registers::data_memory::DataMemory,
+    registers::RegisterFile, OpCode, ProgramInstruction,
 };
 use std::path::Path;
 
@@ -19,6 +20,7 @@ pub struct VM {
     instruction_memory: InstructionMemory,
     pc: PC,
     call_stack: CallStack,
+    data_memory: DataMemory,
 }
 
 impl VM {
@@ -29,6 +31,7 @@ impl VM {
         let instruction_memory = InstructionMemory::default();
         let pc = PC::default();
         let call_stack = CallStack::new();
+        let data_memory = DataMemory::default();
         VM {
             alu,
             reg_file,
@@ -36,6 +39,7 @@ impl VM {
             instruction_memory,
             pc,
             call_stack,
+            data_memory,
         }
     }
 
@@ -59,6 +63,7 @@ impl VM {
         Ok(())
     }
 
+    // TODO: process STR/LOD
     pub fn process_instruction(&mut self, instruction: ProgramInstruction) {
         let opcode = instruction.slice(12);
         let control_signals = self.control_rom.get_control_signals(opcode);
@@ -85,13 +90,14 @@ impl VM {
                 next_pc = instruction.slice(0);
             }
         }
+        if control_signals.is_call {
+            self.call_stack
+                .push(current_pc + Bits::from(1u16).resize::<10>());
+            next_pc = instruction.slice(0);
+        }
 
         self.alu.set_setting(control_signals.alu_settings);
-        if control_signals.reg_file_enable {
-            self.reg_file.enable();
-        } else {
-            self.reg_file.disable();
-        }
+        self.reg_file.enable(control_signals.reg_files_enable);
         let r1 = instruction.slice(8);
         let r2 = instruction.slice(4);
         let mut write_adress = instruction.slice(0);
@@ -111,7 +117,7 @@ impl VM {
         if control_signals.dest_mux {
             write_adress = r1;
         }
-        self.reg_file.schedule_write(write_adress, data);
+        self.reg_file.schedule_write((write_adress, data));
         self.pc.value = next_pc;
     }
 
@@ -123,6 +129,7 @@ impl VM {
         let instruction = self.instruction_memory.instructions[instr_adr];
         self.process_instruction(instruction);
         self.reg_file.clock();
+        self.call_stack.stack.clock();
         instruction.slice(12)
     }
 }

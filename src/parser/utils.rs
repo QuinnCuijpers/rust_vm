@@ -51,6 +51,8 @@ pub(super) fn parse_instruction(instruction: &str) -> Result<Bits<4>> {
         "BRH" => Bits::from_str("1011").unwrap(),
         "CAL" => Bits::from_str("1100").unwrap(),
         "RET" => Bits::from_str("1101").unwrap(),
+        "LOD" => Bits::from_str("1110").unwrap(),
+        "STR" => Bits::from_str("1111").unwrap(),
         &_ => return Err(ParserError::InvalidInstruction(instruction.to_string()).into()),
     };
     Ok(instruction_bits)

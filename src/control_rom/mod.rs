@@ -14,7 +14,7 @@ pub(crate) enum AddrMux {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) struct ControlSignals {
     pub(crate) alu_settings: AluSettings,
-    pub(crate) reg_file_enable: bool,
+    pub(crate) reg_files_enable: bool,
     pub(crate) data_mux: bool,
     pub(crate) dest_mux: bool,
     pub(crate) alu_mux: bool,
@@ -27,83 +27,105 @@ pub(crate) struct ControlSignals {
 impl ControlRom {
     pub(crate) fn get_control_signals(&self, opcode: Bits<4>) -> ControlSignals {
         match opcode.to_string().as_str() {
+            // NOP
             "0000" => ControlSignals {
-                reg_file_enable: false,
+                reg_files_enable: false,
                 set_flags: false,
                 ..Default::default()
             },
+            // HLT
             "0001" => ControlSignals {
-                reg_file_enable: false,
+                reg_files_enable: false,
                 set_flags: false,
                 ..Default::default()
             },
+            // ADD
             "0010" => ControlSignals {
                 alu_settings: AluSettings::Add,
-                reg_file_enable: true,
+                reg_files_enable: true,
                 set_flags: true,
                 ..Default::default()
             },
+            // SUB
             "0011" => ControlSignals {
                 alu_settings: AluSettings::Sub,
-                reg_file_enable: true,
+                reg_files_enable: true,
                 set_flags: true,
                 ..Default::default()
             },
+            // NOR
             "0100" => ControlSignals {
-                alu_settings: AluSettings::And,
-                reg_file_enable: true,
-                set_flags: true,
-                ..Default::default()
-            },
-            "0101" => ControlSignals {
                 alu_settings: AluSettings::Nor,
-                reg_file_enable: true,
+                reg_files_enable: true,
                 set_flags: true,
                 ..Default::default()
             },
+            // AND
+            "0101" => ControlSignals {
+                alu_settings: AluSettings::And,
+                reg_files_enable: true,
+                set_flags: true,
+                ..Default::default()
+            },
+            // XOR
             "0110" => ControlSignals {
                 alu_settings: AluSettings::Xor,
-                reg_file_enable: true,
+                reg_files_enable: true,
                 set_flags: true,
                 ..Default::default()
             },
+            // RSH
             "0111" => ControlSignals {
                 alu_settings: AluSettings::Rshift,
-                reg_file_enable: true,
+                reg_files_enable: true,
                 set_flags: true,
                 ..Default::default()
             },
+            // LDI
             "1000" => ControlSignals {
-                reg_file_enable: true,
+                reg_files_enable: true,
                 data_mux: true,
                 dest_mux: true,
                 set_flags: false,
                 ..Default::default()
             },
+            // ADI
             "1001" => ControlSignals {
                 alu_settings: AluSettings::Add,
-                reg_file_enable: true,
+                reg_files_enable: true,
                 dest_mux: true,
                 alu_mux: true,
                 set_flags: true,
                 ..Default::default()
             },
+            // JMP
             "1010" => ControlSignals {
                 addr_mux: AddrMux::Jump,
                 set_flags: false,
                 ..Default::default()
             },
+            // BRH
             "1011" => ControlSignals {
                 is_branch: true,
                 set_flags: false,
                 ..Default::default()
             },
+            // CAL
             "1100" => ControlSignals {
                 is_call: true,
                 ..Default::default()
             },
+            // RET
             "1101" => ControlSignals {
                 addr_mux: AddrMux::Return,
+                ..Default::default()
+            },
+            // LOD, TODO: implement
+            "1110" => ControlSignals {
+                ..Default::default()
+            },
+            // STR, TODO: implement
+            "1111" => ControlSignals {
                 ..Default::default()
             },
             #[allow(clippy::panic)]
@@ -112,96 +134,5 @@ impl ControlRom {
     }
 }
 
-mod tests {
-    #[allow(unused_imports)]
-    use super::*;
-    #[test]
-    fn add() {
-        let set = ControlRom.get_control_signals(Bits::from(2u8).resize());
-        assert_eq!(
-            set,
-            ControlSignals {
-                alu_settings: AluSettings::Add,
-                reg_file_enable: true,
-                set_flags: true,
-                ..Default::default()
-            }
-        );
-    }
-
-    #[test]
-    fn sub() {
-        let set = ControlRom.get_control_signals(Bits::from(3u8).resize());
-        assert_eq!(
-            set,
-            ControlSignals {
-                alu_settings: AluSettings::Sub,
-                reg_file_enable: true,
-                set_flags: true,
-                ..Default::default()
-            }
-        );
-    }
-
-    #[test]
-    fn and() {
-        let set = ControlRom.get_control_signals(Bits::from(4u8).resize());
-        assert_eq!(
-            set,
-            ControlSignals {
-                alu_settings: AluSettings::And,
-                reg_file_enable: true,
-                set_flags: true,
-                ..Default::default()
-            }
-        );
-    }
-
-    #[test]
-    fn nor() {
-        let set = ControlRom.get_control_signals(Bits::from(5u8).resize());
-        assert_eq!(
-            set,
-            ControlSignals {
-                alu_settings: AluSettings::Nor,
-                reg_file_enable: true,
-                set_flags: true,
-                ..Default::default()
-            }
-        );
-    }
-
-    #[test]
-    fn xor() {
-        let set = ControlRom.get_control_signals(Bits::from(6u8).resize());
-        assert_eq!(
-            set,
-            ControlSignals {
-                alu_settings: AluSettings::Xor,
-                reg_file_enable: true,
-                set_flags: true,
-                ..Default::default()
-            }
-        );
-    }
-
-    #[test]
-    fn rshift() {
-        let set = ControlRom.get_control_signals(Bits::from(7u8).resize());
-        assert_eq!(
-            set,
-            ControlSignals {
-                alu_settings: AluSettings::Rshift,
-                reg_file_enable: true,
-                set_flags: true,
-                ..Default::default()
-            }
-        );
-    }
-
-    #[test]
-    #[should_panic]
-    fn not_yet_implemented() {
-        let _ = ControlRom.get_control_signals(Bits::from(15u8).resize());
-    }
-}
+#[cfg(test)]
+mod tests;

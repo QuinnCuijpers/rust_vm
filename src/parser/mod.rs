@@ -12,8 +12,8 @@ pub(crate) use utils::parse_as_instruction;
 pub mod error;
 mod utils;
 
+// TODO: improve error handling
 #[allow(clippy::unwrap_used)]
-#[allow(unused_variables)] // TODO: remove unused variables
 pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
     let mut output_lines = vec![];
 
@@ -23,7 +23,7 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
 
     let mut labels = std::collections::HashMap::new();
     let content = utils::find_and_remove_labels(&mut content, &mut labels)?;
-    for (pc, line) in content.iter().enumerate() {
+    for line in content.iter() {
         let mut out = vec![];
         let mut splitted = line.split_whitespace();
         let instruction = match splitted.next() {
@@ -85,6 +85,15 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
                 out.push(parse_register_string(r1)?.to_string());
                 out.push(Bits::<8>::from_str(immediate)?.to_string());
             }
+            "BRH" => {
+                let ops = extract_n_operands(2, &mut operands, line)?;
+                let [cond, addr] = ops.as_slice() else {
+                    return Err(ParserError::MissingOperand(line.to_string()).into());
+                };
+                out.push(parse_instruction("BRH").unwrap().to_string());
+                out.push(parse_cond(cond)?.to_string());
+                out.push(parse_address(addr, &mut labels)?.to_string());
+            }
             "RSH" => {
                 let ops = extract_n_operands(2, &mut operands, line)?;
                 let ops_slice = ops.as_slice();
@@ -97,6 +106,23 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
                     return Err(ParserError::MissingOperand(line.to_string()).into());
                 }
             }
+            "LOD" | "STR" => {
+                let ops = extract_n_operands(2, &mut operands, line)?;
+                match ops.as_slice() {
+                    [r1, addr] => {
+                        out.push(parse_instruction(instruction).unwrap().to_string());
+                        out.push(parse_register_string(r1)?.to_string());
+                        out.push(parse_address(addr, &mut labels)?.to_string());
+                    }
+                    [r1, r2, offset] => {
+                        out.push(parse_instruction(instruction).unwrap().to_string());
+                        out.push(parse_register_string(r1)?.to_string());
+                        out.push(parse_register_string(r2)?.to_string());
+                        out.push(Bits::<8>::from_str(offset)?.resize::<4>().to_string());
+                    }
+                    _ => return Err(ParserError::MissingOperand(line.to_string()).into()),
+                }
+            }
             "ADD" | "SUB" | "AND" | "NOR" | "XOR" => {
                 let ops = extract_n_operands(3, &mut operands, line)?;
                 let [r1, r2, write] = ops.as_slice() else {
@@ -106,15 +132,6 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
                 out.push(parse_register_string(r1)?.to_string());
                 out.push(parse_register_string(r2)?.to_string());
                 out.push(parse_register_string(write)?.to_string());
-            }
-            "BRH" => {
-                let ops = extract_n_operands(2, &mut operands, line)?;
-                let [cond, addr] = ops.as_slice() else {
-                    return Err(ParserError::MissingOperand(line.to_string()).into());
-                };
-                out.push(parse_instruction("BRH").unwrap().to_string());
-                out.push(parse_cond(cond)?.to_string());
-                out.push(parse_address(addr, &mut labels)?.to_string());
             }
             _ => return Err(ParserError::InvalidInstruction(instruction.to_string()).into()),
         }

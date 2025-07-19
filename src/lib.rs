@@ -4,13 +4,12 @@
 
 mod alu;
 mod bits;
-mod call_stack;
 mod control_rom;
 mod error;
 mod instruction_memory;
 mod parser;
 mod program_counter;
-mod register;
+mod registers;
 mod vm;
 
 pub(crate) type ProgramInstruction = Bits<16>;

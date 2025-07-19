@@ -1,5 +1,6 @@
 #![allow(unused_results)]
-use crate::register::{RegisterBank, RegisterFile};
+use crate::registers::register_file::RegisterBank;
+use crate::registers::RegisterFile;
 use crate::{bits::Bits, VM};
 
 #[test]
@@ -117,4 +118,22 @@ fn vm_fib_2() {
 fn vm_program_9() {
     let mut vm = VM::default();
     vm.execute_program("test9.as").unwrap();
+    assert_eq!(vm.reg_file.register_banks[0][1].to_usize(), 3);
+}
+
+#[test]
+fn vm_program_bubble_sort() {
+    let mut vm = VM::new();
+    let arr = [6, 2, 5, 8, 9, 1, 3, 3];
+    let mut bit_arr = [Bits::<8>::from(0u8); 256];
+    for (i, &val) in arr.iter().enumerate() {
+        bit_arr[i] = Bits::<8>::try_from_unsigned_number(val as u64).unwrap();
+    }
+    vm.data_memory.memory.copy_from_slice(&bit_arr);
+    vm.execute_program("test_bubble_sort.as").unwrap();
+    let res = vm.data_memory.memory[..arr.len()]
+        .iter()
+        .map(|bits| bits.to_usize())
+        .collect::<Vec<_>>();
+    assert!(res.is_sorted());
 }
