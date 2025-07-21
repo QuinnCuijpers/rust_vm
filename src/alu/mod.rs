@@ -18,6 +18,7 @@ pub(crate) struct Alu {
     config: AluConfig,
     pub setting: AluSettings,
     pub flags: AluFlags,
+    pub set_flags: bool,
 }
 
 impl Alu {

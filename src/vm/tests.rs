@@ -124,16 +124,20 @@ fn vm_program_9() {
 #[test]
 fn vm_program_bubble_sort() {
     let mut vm = VM::new();
-    let arr = [6, 2, 5, 8, 9, 1, 3, 3];
+    let arr: Vec<u64> = vec![6, 2, 5, 8, 9, 1, 3, 4, 7, 0];
     let mut bit_arr = [Bits::<8>::from(0u8); 256];
     for (i, &val) in arr.iter().enumerate() {
-        bit_arr[i] = Bits::<8>::try_from_unsigned_number(val as u64).unwrap();
+        bit_arr[i] = Bits::from(val).resize();
     }
-    vm.data_memory.memory.copy_from_slice(&bit_arr);
+    vm.data_memory.memory[..arr.len()].copy_from_slice(&bit_arr[..arr.len()]);
+    vm.data_memory.memory[0..8]
+        .iter()
+        .for_each(|b| println!("{:?}", b.to_usize()));
     vm.execute_program("test_bubble_sort.as").unwrap();
     let res = vm.data_memory.memory[..arr.len()]
         .iter()
         .map(|bits| bits.to_usize())
         .collect::<Vec<_>>();
+    println!("Sorted array: {res:?}");
     assert!(res.is_sorted());
 }

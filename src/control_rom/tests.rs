@@ -1,4 +1,3 @@
-
 #[allow(unused_imports)]
 use super::*;
 #[test]
@@ -8,7 +7,7 @@ fn add() {
         set,
         ControlSignals {
             alu_settings: AluSettings::Add,
-            reg_files_enable: true,
+            reg_file_enable: true,
             set_flags: true,
             ..Default::default()
         }
@@ -22,7 +21,7 @@ fn sub() {
         set,
         ControlSignals {
             alu_settings: AluSettings::Sub,
-            reg_files_enable: true,
+            reg_file_enable: true,
             set_flags: true,
             ..Default::default()
         }
@@ -36,7 +35,7 @@ fn nor() {
         set,
         ControlSignals {
             alu_settings: AluSettings::Nor,
-            reg_files_enable: true,
+            reg_file_enable: true,
             set_flags: true,
             ..Default::default()
         }
@@ -50,7 +49,7 @@ fn and() {
         set,
         ControlSignals {
             alu_settings: AluSettings::And,
-            reg_files_enable: true,
+            reg_file_enable: true,
             set_flags: true,
             ..Default::default()
         }
@@ -64,7 +63,7 @@ fn xor() {
         set,
         ControlSignals {
             alu_settings: AluSettings::Xor,
-            reg_files_enable: true,
+            reg_file_enable: true,
             set_flags: true,
             ..Default::default()
         }
@@ -78,7 +77,7 @@ fn rshift() {
         set,
         ControlSignals {
             alu_settings: AluSettings::Rshift,
-            reg_files_enable: true,
+            reg_file_enable: true,
             set_flags: true,
             ..Default::default()
         }

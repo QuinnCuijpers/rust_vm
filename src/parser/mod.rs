@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use crate::parser::utils::parse_offset;
 use crate::Result;
 use crate::{bits::Bits, parser::utils::extract_n_operands};
 use error::ParserError;
@@ -118,7 +119,7 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
                         out.push(parse_instruction(instruction).unwrap().to_string());
                         out.push(parse_register_string(r1)?.to_string());
                         out.push(parse_register_string(r2)?.to_string());
-                        out.push(Bits::<8>::from_str(offset)?.resize::<4>().to_string());
+                        out.push(parse_offset(offset)?.to_string());
                     }
                     _ => return Err(ParserError::MissingOperand(line.to_string()).into()),
                 }

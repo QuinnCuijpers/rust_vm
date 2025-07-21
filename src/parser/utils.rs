@@ -114,3 +114,16 @@ pub(crate) fn extract_n_operands<'a>(
     }
     Ok(out)
 }
+
+//TODO: improve error handling
+pub(crate) fn parse_offset(offset: &str) -> Result<Bits<4>> {
+    if let Some(rest) = offset.strip_prefix('-') {
+        let num = rest
+            .parse::<u8>()
+            .map_err(|_| ParserError::InvalidInstruction(offset.to_string()))?;
+        let complement = Bits::from(16 - num);
+        Ok(complement.resize())
+    } else {
+        Ok(Bits::from_str(offset)?)
+    }
+}

@@ -1,11 +1,21 @@
+use crate::control_rom::CallStackState;
 use crate::registers::Register;
 use crate::Address;
 // TODO: refactor this
 const MAX_STACK_SIZE: usize = 16;
 
+#[derive(Debug, PartialEq, Clone, Copy, Default, Eq)]
+pub enum StackState {
+    #[default]
+    Disabled,
+    Push,
+    Pop,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct CallStack {
     pub(crate) stack: BiDirectionalShiftRegister,
+    pub(crate) state: CallStackState,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -59,14 +69,21 @@ impl CallStack {
                 stack_top: None,
                 write_buffer: None,
             },
+            state: CallStackState::Disabled,
         }
     }
 
     pub(crate) fn push(&mut self, address: Address) {
+        if self.state != CallStackState::Push {
+            return;
+        }
         self.stack.schedule_write(address);
     }
 
     pub(crate) fn pop(&mut self) -> Option<Address> {
+        if self.state != CallStackState::Pop {
+            return None;
+        }
         if let Some(top) = self.stack.stack_top {
             for i in 0..MAX_STACK_SIZE - 1 {
                 self.stack.stack[i] = self.stack.stack[i + 1];

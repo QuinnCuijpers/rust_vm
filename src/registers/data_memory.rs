@@ -3,8 +3,10 @@ use crate::{bits::Bits, registers::Register};
 const MEMORY_SIZE: usize = 256; // Size of the data memory in bytes
 type MemoryAddress = Bits<8>; // 8-bit address for 256 bytes of memory
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum MemoryState {
+    #[default]
+    Disabled,
     Read,
     Write,
 }
@@ -13,7 +15,7 @@ pub(crate) enum MemoryState {
 pub(crate) struct DataMemory {
     // TODO: find appropriate type alias
     pub(crate) memory: [Bits<8>; MEMORY_SIZE], // 256 bytes of memory
-    enabled: bool,
+    pub(crate) enabled: bool,
     state: MemoryState,
     write_buffer: Option<(MemoryAddress, Bits<8>)>,
 }
@@ -49,7 +51,7 @@ impl Register for DataMemory {
     }
 
     fn schedule_write(&mut self, write_info: Self::WriteInformation) {
-        if self.enabled {
+        if self.enabled && self.state == MemoryState::Write {
             self.write_buffer = Some(write_info);
         }
     }

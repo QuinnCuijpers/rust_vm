@@ -1,5 +1,6 @@
-use crate::control_rom::AddrMux;
+use crate::control_rom::{AddrMux, AluMux, DataMux, DestMux, ImmediateMux, MemoryAccess};
 use crate::registers::call_stack::CallStack;
+use crate::registers::data_memory::MemoryState;
 use crate::registers::Register;
 use crate::{
     alu::Alu, bits::Bits, control_rom::ControlRom, instruction_memory::InstructionMemory,
@@ -63,13 +64,33 @@ impl VM {
         Ok(())
     }
 
-    // TODO: process STR/LOD
-    pub fn process_instruction(&mut self, instruction: ProgramInstruction) {
+    fn process_instruction(&mut self, instruction: ProgramInstruction) {
         let opcode = instruction.slice(12);
         let control_signals = self.control_rom.get_control_signals(opcode);
 
+        self.call_stack.state = control_signals.call_stack_state;
+        self.reg_file.enable(control_signals.reg_file_enable);
+        self.alu.set_setting(control_signals.alu_settings);
+        match control_signals.memory_access {
+            MemoryAccess::Read => {
+                self.data_memory.enabled = true;
+                self.data_memory.set_state(MemoryState::Read);
+            }
+            MemoryAccess::Write => {
+                self.data_memory.enabled = true;
+                self.data_memory.set_state(MemoryState::Write);
+            }
+            MemoryAccess::Disabled => {
+                self.data_memory.set_state(MemoryState::Disabled);
+                self.data_memory.enabled = false;
+            }
+        }
+        self.alu.set_flags = control_signals.set_flags;
+
         let current_pc = self.pc.value;
         let pc_inc = current_pc + Bits::from(1u16).resize::<10>();
+
+        self.call_stack.push(pc_inc);
         let mut next_pc = match control_signals.addr_mux {
             AddrMux::Increment => pc_inc,
             AddrMux::Jump => instruction.slice(0),
@@ -84,40 +105,49 @@ impl VM {
                 }
             }
         };
+
         if control_signals.is_branch {
             let condition = instruction.slice(10);
             if self.alu.flags.cond_true(condition) {
                 next_pc = instruction.slice(0);
             }
         }
-        if control_signals.is_call {
-            self.call_stack
-                .push(current_pc + Bits::from(1u16).resize::<10>());
-            next_pc = instruction.slice(0);
-        }
 
-        self.alu.set_setting(control_signals.alu_settings);
-        self.reg_file.enable(control_signals.reg_files_enable);
         let r1 = instruction.slice(8);
         let r2 = instruction.slice(4);
-        let mut write_adress = instruction.slice(0);
         self.reg_file.set_read_addresses([r1, r2]);
-        let [a, mut b] = self.reg_file.read_outputs;
-        if control_signals.alu_mux {
-            b = instruction.slice(0);
-        }
-        let data = if control_signals.set_flags {
-            self.alu.compute(a, b)
-        } else if control_signals.data_mux {
-            instruction.slice(0)
-        } else {
-            // TODO: properly handle
-            Bits::from(0u8)
+
+        let [a, b] = self.reg_file.read_outputs;
+
+        let immediate = match control_signals.immediate_mux {
+            ImmediateMux::Immediate => instruction.slice(0),
+            ImmediateMux::Offset => instruction.slice::<4>(0).resize::<8>(),
         };
-        if control_signals.dest_mux {
-            write_adress = r1;
-        }
-        self.reg_file.schedule_write((write_adress, data));
+
+        let alu_input_b = match control_signals.alu_mux {
+            AluMux::R2 => b,
+            AluMux::BypassRegisterFile => immediate,
+        };
+
+        let alu_result = self.alu.compute(a, alu_input_b);
+
+        let data = match control_signals.data_mux {
+            DataMux::Alu => alu_result,
+            DataMux::Immediate => instruction.slice(0),
+            DataMux::Memory => self.data_memory.read(alu_result),
+        };
+
+        // TODO: check
+        self.data_memory.schedule_write((alu_result, b));
+
+        let write_address = match control_signals.dest_mux {
+            DestMux::First => instruction.slice(8),
+            DestMux::Second => instruction.slice(4),
+            DestMux::Third => instruction.slice(0),
+        };
+
+        self.reg_file.schedule_write((write_address, data));
+
         self.pc.value = next_pc;
     }
 
@@ -130,6 +160,7 @@ impl VM {
         self.process_instruction(instruction);
         self.reg_file.clock();
         self.call_stack.stack.clock();
+        self.data_memory.clock();
         instruction.slice(12)
     }
 }
