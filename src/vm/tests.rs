@@ -173,3 +173,14 @@ fn vm_program_character_display() {
         "Hello!".to_ascii_lowercase()
     );
 }
+
+#[test]
+fn vm_program_screen() {
+    let mut vm = VM::default();
+    vm.execute_program("screen.as").unwrap();
+    for row in vm.io_devices.screen.active.iter() {
+        for &pixel in row.iter() {
+            assert!(!pixel, "Expected all pixels to be false");
+        }
+    }
+}

@@ -1,0 +1,14 @@
+LDI r15 240
+LDI r1 2
+LDI r2 3
+STR r15 r1 0
+STR r15 r2 1
+STR r15 r0 2
+STR r15 r0 5
+LDI r2 4
+STR r15 r2 1
+STR r15 r0 2
+STR r15 r0 5
+STR r15 r0 6
+STR r15 r0 5
+HLT
