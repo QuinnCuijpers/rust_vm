@@ -1,0 +1,3 @@
+INC r1
+STR r15 r1 2
+HLT

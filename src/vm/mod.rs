@@ -1,4 +1,5 @@
 use crate::control_rom::{AddrMux, AluMux, DataMux, DestMux, ImmediateMux, MemoryAccess};
+use crate::io_devices::{Device, IoDevices};
 use crate::registers::call_stack::CallStack;
 use crate::registers::data_memory::MemoryState;
 use crate::registers::Register;
@@ -22,6 +23,7 @@ pub struct VM {
     pc: PC,
     call_stack: CallStack,
     data_memory: DataMemory,
+    io_devices: IoDevices,
 }
 
 impl VM {
@@ -33,6 +35,7 @@ impl VM {
         let pc = PC::default();
         let call_stack = CallStack::new();
         let data_memory = DataMemory::default();
+        let io_devices = IoDevices::default();
         VM {
             alu,
             reg_file,
@@ -41,6 +44,7 @@ impl VM {
             pc,
             call_stack,
             data_memory,
+            io_devices,
         }
     }
 
@@ -52,6 +56,7 @@ impl VM {
     }
 
     pub fn load_program(&mut self, file_path: impl AsRef<Path>) -> crate::Result<()> {
+        self.pc.value = Bits::from(0u16).resize();
         let file_path = file_path.as_ref();
         crate::parser::parse_program(file_path)?;
         let path = Path::new(file_path).with_extension("mc");
@@ -128,17 +133,28 @@ impl VM {
             AluMux::R2 => b,
             AluMux::BypassRegisterFile => immediate,
         };
-
         let alu_result = self.alu.compute(a, alu_input_b);
 
         let data = match control_signals.data_mux {
             DataMux::Alu => alu_result,
             DataMux::Immediate => instruction.slice(0),
-            DataMux::Memory => self.data_memory.read(alu_result),
+            DataMux::Memory => {
+                if alu_result >= Bits::from(240u8) {
+                    // If the ALU result is an I/O address, read from the corresponding device
+                    self.io_devices.on_read(alu_result)
+                } else {
+                    // Otherwise, read from the data memory
+                    self.data_memory.read(alu_result)
+                }
+            }
         };
-
-        // TODO: check
-        self.data_memory.schedule_write((alu_result, b));
+        if alu_result >= Bits::from(240u8) {
+            // If the ALU result is an I/O address, write to the corresponding device
+            self.io_devices.on_write(alu_result, b);
+        } else {
+            // Otherwise, write to the data memory
+            self.data_memory.schedule_write((alu_result, b));
+        }
 
         let write_address = match control_signals.dest_mux {
             DestMux::First => instruction.slice(8),

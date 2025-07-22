@@ -1,0 +1,4 @@
+LDI r15 248
+LDI r1 200
+STR r15 r1 2
+HLT

@@ -63,3 +63,11 @@ fn subassign() {
     bits1 -= bits2;
     assert_eq!(bits1, Bits::<8>::from(0b0000_0011u8)); // 3 in binary
 }
+
+#[test]
+fn addassign() {
+    let mut bits1 = Bits::<8>::from(0b0000_0011u8); // 3 in binary
+    let bits2 = Bits::<8>::from(0b0000_0101u8); // 5 in binary
+    bits1 += bits2;
+    assert_eq!(bits1, Bits::<8>::from(0b0000_1000u8)); // 8 in binary
+}

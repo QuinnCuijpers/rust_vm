@@ -3,6 +3,8 @@ use crate::parser::error::ParserError;
 use crate::{Address, Result};
 use std::str::FromStr;
 
+const CHARSET: &str = " abcdefghijklmnopqrstuvwxyz.!?";
+
 pub(super) fn parse_register_string(s: &str) -> Result<Bits<4>> {
     if s.len() < 2 || !s.starts_with('r') {
         return Err(ParserError::InvalidInstruction(s.to_string()).into());
@@ -126,4 +128,16 @@ pub(crate) fn parse_offset(offset: &str) -> Result<Bits<4>> {
     } else {
         Ok(Bits::from_str(offset)?)
     }
+}
+
+pub(crate) fn parse_immediate(imm: String) -> Result<Bits<8>> {
+    // parse chars
+    if let Some(stripped) = imm.strip_prefix("\"") {
+        if let Some(char) = stripped.strip_suffix("\"") {
+            if let Some(idx) = CHARSET.find(char) {
+                return Ok(Bits::from(idx as u8));
+            }
+        }
+    };
+    Ok(Bits::from_str(&imm)?)
 }

@@ -141,3 +141,35 @@ fn vm_program_bubble_sort() {
     println!("Sorted array: {res:?}");
     assert!(res.is_sorted());
 }
+
+#[test]
+fn vm_program_number_display() {
+    let mut vm = VM::default();
+    vm.execute_program("test_number_display1.as").unwrap();
+    assert_eq!(vm.io_devices.number_display.display(), "200");
+
+    vm.execute_program("test_number_display2.as").unwrap();
+    assert_eq!(vm.io_devices.number_display.display(), "201");
+
+    vm.execute_program("test_number_display3.as").unwrap();
+    assert_eq!(vm.io_devices.number_display.display(), "-55");
+
+    vm.execute_program("test_number_display4.as").unwrap();
+    assert_eq!(vm.io_devices.number_display.display(), "201");
+
+    vm.execute_program("test_number_display5.as").unwrap();
+    assert_eq!(vm.io_devices.number_display.display(), "0");
+
+    vm.execute_program("test_number_display6.as").unwrap();
+    assert_eq!(vm.io_devices.number_display.display(), "202");
+}
+
+#[test]
+fn vm_program_character_display() {
+    let mut vm = VM::default();
+    vm.execute_program("hello.as").unwrap();
+    assert_eq!(
+        vm.io_devices.character_display.active,
+        "Hello!".to_ascii_lowercase()
+    );
+}

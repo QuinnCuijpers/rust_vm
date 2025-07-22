@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::parser::utils::parse_offset;
+use crate::parser::utils::{parse_immediate, parse_offset};
 use crate::Result;
 use crate::{bits::Bits, parser::utils::extract_n_operands};
 use error::ParserError;
@@ -84,7 +84,7 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
                 };
                 out.push(parse_instruction(instruction).unwrap().to_string());
                 out.push(parse_register_string(r1)?.to_string());
-                out.push(Bits::<8>::from_str(immediate)?.to_string());
+                out.push(parse_immediate(immediate.to_string())?.to_string());
             }
             "BRH" => {
                 let ops = extract_n_operands(2, &mut operands, line)?;
@@ -110,10 +110,11 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
             "LOD" | "STR" => {
                 let ops = extract_n_operands(2, &mut operands, line)?;
                 match ops.as_slice() {
-                    [r1, addr] => {
+                    [r1, r2] => {
                         out.push(parse_instruction(instruction).unwrap().to_string());
                         out.push(parse_register_string(r1)?.to_string());
-                        out.push(parse_address(addr, &mut labels)?.to_string());
+                        out.push(parse_register_string(r2)?.to_string());
+                        out.push("0000".to_string());
                     }
                     [r1, r2, offset] => {
                         out.push(parse_instruction(instruction).unwrap().to_string());

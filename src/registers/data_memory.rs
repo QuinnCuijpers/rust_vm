@@ -1,7 +1,6 @@
-use crate::{bits::Bits, registers::Register};
+use crate::{bits::Bits, registers::Register, MemoryAddress};
 
 const MEMORY_SIZE: usize = 256; // Size of the data memory in bytes
-type MemoryAddress = Bits<8>; // 8-bit address for 256 bytes of memory
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum MemoryState {

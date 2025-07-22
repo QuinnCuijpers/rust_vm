@@ -26,16 +26,3 @@ fn u16_conversion() {
     assert_eq!(bits[1], true);
     assert_eq!(bits[15], true);
 }
-
-#[test]
-fn from_ref_bits() {
-    let bits = Bits::<8>::from(0b10101010u8);
-    let ref_bits: &Bits<8> = &bits;
-    assert_eq!(ref_bits.to_string(), "10101010");
-
-    assert_eq!(u8::from(ref_bits), 0b10101010);
-    assert_eq!(ref_bits.to_string(), "10101010");
-
-    // Test that formatting a reference yields the same as owned
-    assert_eq!(format!("{ref_bits}"), format!("{bits}"));
-}

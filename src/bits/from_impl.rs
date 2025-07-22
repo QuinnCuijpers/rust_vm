@@ -18,7 +18,7 @@ macro_rules! impl_bits_from {
     };
 }
 
-macro_rules! impl_from_bits {
+macro_rules! impl_from_bits_unsigned {
     ($($ty:ty), *) => {
         $(
         impl From<crate::bits::Bits<{ std::mem::size_of::<$ty>() * 8 }>> for $ty {
@@ -33,24 +33,30 @@ macro_rules! impl_from_bits {
     };
 }
 
-macro_rules! impl_from_ref_bits {
-    ($($t:ty),*) => {
+macro_rules! impl_from_bits_signed {
+    ($($ty:ty), *) => {
         $(
-        impl From<&crate::bits::Bits<{ std::mem::size_of::<$t>() * 8 }>> for $t {
-            fn from(bits: &crate::bits::Bits<{ std::mem::size_of::<$t>() * 8 }>) -> Self {
-                bits.bit_array
-                    .iter()
-                    .enumerate()
-                    .fold(0, |acc, (i, &b)| acc | ((b as $t) << i))
+        impl From<crate::bits::Bits<{ std::mem::size_of::<$ty>() * 8 }>> for $ty {
+            fn from(bits: crate::bits::Bits<{ std::mem::size_of::<$ty>() * 8 }>) -> Self {
+                let n = std::mem::size_of::<$ty>() * 8;
+                let mut value: $ty = 0;
+                for (i, &b) in bits.bit_array.iter().enumerate() {
+                    value |= (b as $ty) << i;
+                }
+                if n < <$ty>::BITS as usize && bits.bit_array[n - 1] {
+                    let sign_extension = (!0 as $ty) << n;
+                    value |= sign_extension;
+                }
+                value
             }
         }
-    )*
+        )*
     };
 }
 
 impl_bits_from!(u8, u16, u32, u64, usize, i8, i16, i32, i64, isize);
-impl_from_bits!(i8, i16, i32, i64, isize, u8, u16, u32, u64, usize);
-impl_from_ref_bits!(i8, i16, i32, i64, isize, u8, u16, u32, u64, usize);
+impl_from_bits_unsigned!(u8, u16, u32, u64, usize);
+impl_from_bits_signed!(i8, i16, i32, i64, isize);
 
 impl<const N: usize> FromStr for Bits<N> {
     type Err = crate::bits::BitsParseError;

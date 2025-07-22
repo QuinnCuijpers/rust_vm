@@ -1,11 +1,9 @@
 pub mod error;
 pub mod from_impl;
+pub mod impl_ops;
 pub mod macros;
 
 pub use error::*;
-
-use crate::alu::{Alu, AluSettings};
-use std::ops::{Add, AddAssign, Index, Sub, SubAssign};
 
 #[derive(Debug, Clone, Copy, Eq)]
 pub struct Bits<const N: usize> {
@@ -33,6 +31,20 @@ impl<const N: usize> Bits<N> {
             .iter()
             .enumerate()
             .fold(0, |acc, (i, &b)| acc | ((b as usize) << i))
+    }
+
+    pub(crate) fn to_signed(self) -> isize {
+        let mut out = 0;
+        for (i, &b) in self.bit_array.iter().enumerate() {
+            if b {
+                out |= 1 << i;
+            }
+        }
+        if self.bit_array[N - 1] {
+            // Check sign bit
+            out |= -(1 << (N - 1));
+        }
+        out
     }
 
     pub fn try_from_unsigned_number<T>(value: T) -> Result<Self, super::BitsParseError>
@@ -115,47 +127,9 @@ impl<const N: usize> IntoIterator for Bits<N> {
     }
 }
 
-impl<const N: usize> Index<usize> for Bits<N> {
-    type Output = bool;
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.bit_array[index]
-    }
-}
-
 impl<const N: usize, const L: usize> PartialEq<Bits<L>> for Bits<N> {
     fn eq(&self, other: &Bits<L>) -> bool {
         self.to_usize() == other.to_usize()
-    }
-}
-
-impl<const N: usize> Add for Bits<N> {
-    type Output = Self;
-    fn add(self, rhs: Self) -> Self::Output {
-        let mut alu = Alu::default();
-        alu.compute(self, rhs)
-    }
-}
-
-impl<const N: usize> AddAssign for Bits<N> {
-    fn add_assign(&mut self, rhs: Self) {
-        let mut alu = Alu::default();
-        let res = alu.compute(*self, rhs);
-        *self = res;
-    }
-}
-
-impl<const N: usize> Sub for Bits<N> {
-    type Output = Self;
-    fn sub(self, rhs: Self) -> Self::Output {
-        let mut alu = Alu::new(AluSettings::Sub);
-        alu.compute(self, rhs)
-    }
-}
-
-impl<const N: usize> SubAssign for Bits<N> {
-    fn sub_assign(&mut self, rhs: Self) {
-        let mut alu = Alu::new(AluSettings::Sub);
-        *self = alu.compute(*self, rhs);
     }
 }
 

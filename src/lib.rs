@@ -1,12 +1,12 @@
 #![allow(dead_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
-#![deny(clippy::redundant_test_prefix)]
+#![deny(clippy::all)]
 
 mod alu;
 mod bits;
 mod control_rom;
 mod error;
 mod instruction_memory;
+mod io_devices;
 mod parser;
 mod program_counter;
 mod registers;
@@ -18,6 +18,7 @@ pub(crate) type OpCode = Bits<4>;
 pub(crate) type Immediate = Bits<8>;
 pub(crate) type Address = Bits<10>;
 pub(crate) type Condition = Bits<2>;
+pub(crate) type MemoryAddress = Bits<8>; // 8-bit address for 256 bytes of memory
 
 use crate::bits::Bits;
 pub use crate::bits::BitsParseError;
