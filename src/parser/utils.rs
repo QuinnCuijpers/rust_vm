@@ -27,7 +27,11 @@ pub(super) fn parse_register_string(s: &str) -> Result<Bits<4>> {
     if s.len() < 2 || !s.starts_with('r') {
         return Err(ParserError::InvalidInstruction(s.to_string()).into());
     }
-    Bits::from_str(&s[1..])
+    let num_s = &s[1..];
+    if num_s.starts_with("-") {
+        return Err(ParserError::InvalidInstruction(s.to_string()).into());
+    }
+    Bits::from_str(num_s)
 }
 
 #[allow(clippy::unwrap_used)]

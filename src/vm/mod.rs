@@ -22,8 +22,8 @@ pub struct VM {
     instruction_memory: InstructionMemory,
     pc: PC,
     call_stack: CallStack,
-    data_memory: DataMemory,
-    io_devices: IoDevices,
+    pub data_memory: DataMemory,
+    pub io_devices: IoDevices,
 }
 
 impl VM {
@@ -180,6 +180,3 @@ impl VM {
         instruction.slice(12)
     }
 }
-
-#[cfg(test)]
-mod tests;

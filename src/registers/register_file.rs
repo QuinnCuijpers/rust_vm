@@ -6,16 +6,16 @@ const REGISTER_BANK_SIZE: usize = 16; // Number of registers in each bank
 const REGISTER_SIZE: usize = 8; // Size of each register in bits
 
 type DataRegister = Bits<REGISTER_SIZE>;
-pub(crate) type RegisterBank = [DataRegister; REGISTER_BANK_SIZE];
+pub type RegisterBank = [DataRegister; REGISTER_BANK_SIZE];
 type RegisterIndex = Bits<4>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RegisterFile {
-    pub(crate) register_banks: [RegisterBank; 2], // Two sets of 16 registers, for simulated dual read
+    pub register_banks: [RegisterBank; 2], // Two sets of 16 registers, for simulated dual read
     enabled: bool,
     write_buffer: Option<(RegisterIndex, Immediate)>,
     read_addresses: [RegisterIndex; 2],
-    pub(crate) read_outputs: [DataRegister; 2],
+    pub read_outputs: [DataRegister; 2],
 }
 
 impl Default for RegisterFile {
@@ -74,7 +74,7 @@ impl Register for RegisterFile {
 }
 
 impl RegisterFile {
-    pub(crate) fn new(rb: RegisterBank) -> Self {
+    pub fn new(rb: RegisterBank) -> Self {
         RegisterFile {
             register_banks: [rb; 2],
             enabled: true,

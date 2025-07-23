@@ -1,6 +1,7 @@
-mod unsigned;
-mod signed;
 mod array;
+mod signed;
+mod slice;
 mod string;
 mod tryfrom;
-mod slice;
+mod unsigned;
+mod binary;

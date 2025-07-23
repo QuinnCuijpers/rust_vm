@@ -26,7 +26,7 @@ impl<const N: usize> Bits<N> {
         self.bit_array.iter_mut()
     }
 
-    pub(crate) fn to_usize(self) -> usize {
+    pub fn to_usize(self) -> usize {
         self.bit_array
             .iter()
             .enumerate()
@@ -109,6 +109,38 @@ impl<const N: usize> Bits<N> {
         }
         chunks.reverse();
         chunks
+    }
+
+    fn from_str_binary(stripped: &str) -> Result<Bits<N>, crate::error::VmError> {
+        let bits = [false; N];
+        if stripped.len() > N {
+            return Err(crate::bits::BitsParseError::Length {
+                expected: N,
+                found: stripped.len(),
+                string: stripped.to_string(),
+            }
+            .into());
+        } else if stripped.len() < N {
+            let mut padded = String::with_capacity(N);
+            for _ in 0..(N - stripped.len()) {
+                padded.push('0');
+            }
+            padded.push_str(stripped);
+            return Self::from_str_binary(&padded);
+        }
+
+        let mut bits = bits;
+        for (i, c) in stripped.chars().rev().enumerate() {
+            bits[i] = match c {
+                '0' => false,
+                '1' => true,
+                _ => {
+                    return Err(crate::bits::BitsParseError::Character { character: c }.into());
+                }
+            };
+        }
+
+        Ok(Bits { bit_array: bits })
     }
 }
 

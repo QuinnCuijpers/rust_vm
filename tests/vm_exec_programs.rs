@@ -1,12 +1,13 @@
 #![allow(unused_results)]
-use crate::registers::register_file::RegisterBank;
-use crate::registers::RegisterFile;
-use crate::{bits::Bits, VM};
+use rust_vm::registers::register_file::RegisterBank;
+use rust_vm::registers::RegisterFile;
+use rust_vm::Bits;
+use rust_vm::VM;
 
 #[test]
 fn vm_execute_program() {
     let mut vm = VM::default();
-    vm.execute_program("test.as").unwrap();
+    vm.execute_program("tests/test_programs/test.as").unwrap();
     vm.reg_file.display();
 }
 
@@ -18,7 +19,7 @@ fn vm_execution() {
     arr[3] = Bits::from(6u8);
     let mut vm = VM::new();
     vm.reg_file = RegisterFile::new(RegisterBank::from(arr));
-    vm.execute_program("test.as").unwrap();
+    vm.execute_program("tests/test_programs/test.as").unwrap();
     assert_eq!(vm.reg_file.register_banks[0][1].to_usize(), 7,);
     assert_eq!(vm.reg_file.register_banks[0][2].to_usize(), 7,);
     assert_eq!(vm.reg_file.register_banks[0][3].to_usize(), 9,);
@@ -44,7 +45,7 @@ fn vm_execute_program_2() {
     arr[2] = Bits::from(1u8);
     let mut vm = VM::new();
     vm.reg_file = RegisterFile::new(RegisterBank::from(arr));
-    vm.execute_program("test2.as").unwrap();
+    vm.execute_program("tests/test_programs/test2.as").unwrap();
     assert_eq!(vm.reg_file.register_banks[0][1].to_usize(), 3);
     assert_eq!(vm.reg_file.register_banks[0][2].to_usize(), 1);
     assert_eq!(vm.reg_file.register_banks[0][3].to_usize(), 2);
@@ -58,7 +59,7 @@ fn vm_execute_program_2() {
 #[test]
 fn vm_program_3() {
     let mut vm = VM::default();
-    vm.execute_program("test3.as").unwrap();
+    vm.execute_program("tests/test_programs/test3.as").unwrap();
     assert_eq!(vm.reg_file.register_banks[0][1].to_usize(), 4);
     assert_eq!(vm.reg_file.register_banks[0][2].to_usize(), 8);
 }
@@ -66,7 +67,7 @@ fn vm_program_3() {
 #[test]
 fn fib() {
     let mut vm = VM::default();
-    vm.execute_program("fib.as").unwrap();
+    vm.execute_program("tests/test_programs/fib.as").unwrap();
     assert_eq!(vm.reg_file.register_banks[0][1].to_usize(), 1);
     assert_eq!(vm.reg_file.register_banks[0][2].to_usize(), 1);
     assert_eq!(vm.reg_file.register_banks[0][3].to_usize(), 2);
@@ -77,47 +78,47 @@ fn fib() {
 #[test]
 fn vm_program_4() {
     let mut vm = VM::default();
-    vm.execute_program("test4.as").unwrap();
+    vm.execute_program("tests/test_programs/test4.as").unwrap();
     assert_eq!(vm.reg_file.register_banks[0][1].to_usize(), 3);
 }
 
 #[test]
 fn vm_program_5() {
     let mut vm = VM::default();
-    vm.execute_program("test5.as").unwrap();
+    vm.execute_program("tests/test_programs/test5.as").unwrap();
     assert_eq!(vm.reg_file.register_banks[0][1].to_usize(), 3);
 }
 
 #[test]
 fn vm_program_6() {
     let mut vm = VM::default();
-    vm.execute_program("test6.as").unwrap();
+    vm.execute_program("tests/test_programs/test6.as").unwrap();
     assert_eq!(vm.reg_file.register_banks[0][1].to_usize(), 1);
 }
 
 #[test]
 fn vm_program_7() {
     let mut vm = VM::default();
-    vm.execute_program("test7.as").unwrap();
+    vm.execute_program("tests/test_programs/test7.as").unwrap();
 }
 
 #[test]
 fn vm_program_8() {
     let mut vm = VM::default();
-    vm.execute_program("test8.as").unwrap();
+    vm.execute_program("tests/test_programs/test8.as").unwrap();
 }
 
 #[test]
 fn vm_fib_2() {
     let mut vm = VM::default();
-    vm.execute_program("fib2.as").unwrap();
+    vm.execute_program("tests/test_programs/fib2.as").unwrap();
     assert_eq!(vm.reg_file.register_banks[0][3].to_usize(), 13);
 }
 
 #[test]
 fn vm_program_9() {
     let mut vm = VM::default();
-    vm.execute_program("test9.as").unwrap();
+    vm.execute_program("tests/test_programs/test9.as").unwrap();
     assert_eq!(vm.reg_file.register_banks[0][1].to_usize(), 3);
 }
 
@@ -133,7 +134,8 @@ fn vm_program_bubble_sort() {
     vm.data_memory.memory[0..8]
         .iter()
         .for_each(|b| println!("{:?}", b.to_usize()));
-    vm.execute_program("test_bubble_sort.as").unwrap();
+    vm.execute_program("tests/test_programs/test_bubble_sort.as")
+        .unwrap();
     let res = vm.data_memory.memory[..arr.len()]
         .iter()
         .map(|bits| bits.to_usize())
@@ -145,29 +147,35 @@ fn vm_program_bubble_sort() {
 #[test]
 fn vm_program_number_display() {
     let mut vm = VM::default();
-    vm.execute_program("test_number_display1.as").unwrap();
+    vm.execute_program("tests/test_programs/test_number_display1.as")
+        .unwrap();
     assert_eq!(vm.io_devices.number_display.display(), "200");
 
-    vm.execute_program("test_number_display2.as").unwrap();
+    vm.execute_program("tests/test_programs/test_number_display2.as")
+        .unwrap();
     assert_eq!(vm.io_devices.number_display.display(), "201");
 
-    vm.execute_program("test_number_display3.as").unwrap();
+    vm.execute_program("tests/test_programs/test_number_display3.as")
+        .unwrap();
     assert_eq!(vm.io_devices.number_display.display(), "-55");
 
-    vm.execute_program("test_number_display4.as").unwrap();
+    vm.execute_program("tests/test_programs/test_number_display4.as")
+        .unwrap();
     assert_eq!(vm.io_devices.number_display.display(), "201");
 
-    vm.execute_program("test_number_display5.as").unwrap();
+    vm.execute_program("tests/test_programs/test_number_display5.as")
+        .unwrap();
     assert_eq!(vm.io_devices.number_display.display(), "0");
 
-    vm.execute_program("test_number_display6.as").unwrap();
+    vm.execute_program("tests/test_programs/test_number_display6.as")
+        .unwrap();
     assert_eq!(vm.io_devices.number_display.display(), "202");
 }
 
 #[test]
 fn vm_program_character_display() {
     let mut vm = VM::default();
-    vm.execute_program("hello.as").unwrap();
+    vm.execute_program("tests/test_programs/hello.as").unwrap();
     assert_eq!(
         vm.io_devices.character_display.active,
         "Hello!".to_ascii_lowercase()
@@ -177,7 +185,7 @@ fn vm_program_character_display() {
 #[test]
 fn vm_program_screen() {
     let mut vm = VM::default();
-    vm.execute_program("screen.as").unwrap();
+    vm.execute_program("tests/test_programs/screen.as").unwrap();
     for row in vm.io_devices.screen.active.iter() {
         for &pixel in row.iter() {
             assert!(!pixel, "Expected all pixels to be false");

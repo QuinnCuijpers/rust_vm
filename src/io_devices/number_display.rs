@@ -6,17 +6,17 @@ use crate::{bits::Bits, io_devices::Device};
 // 253	Store Only	Unsigned Mode		Interpret number as unsigned int [0, 255]
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
-pub(crate) enum DisplayState {
+pub enum DisplayState {
     SignedMode,
     #[default]
     UnsignedMode,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Default, Copy)]
-pub(crate) struct NumberDisplay {
-    pub(crate) display: Bits<8>,
-    pub(crate) state: DisplayState,
-    pub(crate) active: bool, // Indicates if the display is active
+pub struct NumberDisplay {
+    pub display: Bits<8>,
+    pub state: DisplayState,
+    pub active: bool, // Indicates if the display is active
 }
 
 impl NumberDisplay {

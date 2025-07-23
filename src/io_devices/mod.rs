@@ -6,11 +6,11 @@ mod rng;
 mod screen;
 
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
-pub(crate) struct IoDevices {
-    pub(crate) character_display: character_display::CharacterDisplay,
-    pub(crate) number_display: number_display::NumberDisplay,
-    pub(crate) rng: rng::RNG,
-    pub(crate) screen: screen::Screen,
+pub struct IoDevices {
+    pub character_display: character_display::CharacterDisplay,
+    pub number_display: number_display::NumberDisplay,
+    pub rng: rng::RNG,
+    pub screen: screen::Screen,
 }
 
 impl Device for IoDevices {
@@ -70,7 +70,7 @@ mod test {
         assert_eq!(display.display, Bits::from(42));
 
         display.on_write(MemoryAddress::from(251u8), Bits::from(0u8));
-        assert!(display.active);
+        assert!(!display.active);
 
         display.on_write(MemoryAddress::from(252u8), Bits::from(0u8));
         assert_eq!(

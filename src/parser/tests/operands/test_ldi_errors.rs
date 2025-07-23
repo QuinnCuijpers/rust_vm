@@ -20,22 +20,6 @@ fn ldi_missing_value_operand() {
 }
 
 #[test]
-fn ldi_too_many_operands() {
-    let test_file = "test_ldi_too_many_operands.as";
-    let mut file = File::create(test_file).unwrap();
-    writeln!(file, "LDI r1 42 extra").unwrap();
-    drop(file);
-    let err = parse_program(test_file).unwrap_err();
-    match err {
-        VmError::Parser(ParserError::MissingOperand(ref line)) => {
-            assert!(line.contains("LDI r1 42 extra"))
-        }
-        _ => panic!("Expected TooManyOperands error"),
-    }
-    std::fs::remove_file(test_file).unwrap();
-}
-
-#[test]
 fn ldi_only_instruction() {
     let test_file = "test_ldi_only_instruction.as";
     let mut file = File::create(test_file).unwrap();

@@ -2,14 +2,14 @@
 #![deny(clippy::all)]
 
 mod alu;
-mod bits;
+pub mod bits;
 mod control_rom;
 mod error;
 mod instruction_memory;
 mod io_devices;
 mod parser;
 mod program_counter;
-mod registers;
+pub mod registers;
 mod vm;
 
 pub(crate) type ProgramInstruction = Bits<16>;
@@ -20,7 +20,7 @@ pub(crate) type Address = Bits<10>;
 pub(crate) type Condition = Bits<2>;
 pub(crate) type MemoryAddress = Bits<8>; // 8-bit address for 256 bytes of memory
 
-use crate::bits::Bits;
+pub use crate::bits::Bits;
 pub use crate::bits::BitsParseError;
 pub use crate::parser::error::ParserError;
 pub use crate::vm::VM;

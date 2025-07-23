@@ -6,4 +6,13 @@ authors = ["Quinn Cuijpers <Quinn.Cuijpers@gmail.com>"]
 license = "MIT"
 description = "A Rust-based virtual machine for educational purposes"
 
+[[bin]]
+name = "rust_vm"
+path = "main.rs"
+
 [dependencies]
+pixels = "0.15"
+winit = "0.30.11"
+winit_input_helper = "0.16.0"
+log = "0.4"
+env_logger = "0.11.8"

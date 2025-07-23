@@ -9,9 +9,9 @@ const BUFFER_SIZE: usize = 10; // Maximum number of characters in the buffer
 const CHARACTERS: &str = " abcdefghijklmnopqrstuvwxyz.!?";
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub(crate) struct CharacterDisplay {
+pub struct CharacterDisplay {
     pub(crate) buffer: String,
-    pub(crate) active: String,
+    pub active: String,
 }
 
 impl Default for CharacterDisplay {

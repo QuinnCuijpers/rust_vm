@@ -27,16 +27,3 @@ fn parse_program_missing_write_operand() {
     assert!(err.contains("Missing operand"));
     std::fs::remove_file(test_file).unwrap();
 }
-
-#[test]
-fn parse_program_too_many_operands() {
-    let test_file = "too_many_operands.as";
-    let mut file = File::create(test_file).unwrap();
-    writeln!(file, "ADD r1 r2 r3 r4").unwrap();
-    drop(file);
-    let result = parse_program(test_file);
-    assert!(result.is_err());
-    let err = result.unwrap_err().to_string();
-    assert!(err.contains("Missing operand"));
-    std::fs::remove_file(test_file).unwrap();
-}

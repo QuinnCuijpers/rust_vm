@@ -23,8 +23,8 @@ fn parse_register_string_negative_value() {
     std::fs::write(test_file, "ADD r-1 r1 r2").unwrap();
     let err = parse_program(test_file).unwrap_err();
     match err {
-        VmError::Bits(BitsParseError::Number { .. }) => (),
-        _ => panic!("Expected Number error"),
+        VmError::Parser(ParserError::InvalidInstruction(ref s)) => assert_eq!(s, "r-1"),
+        _ => panic!("Expected InvalidInstruction error"),
     }
     std::fs::remove_file(test_file).unwrap();
 }

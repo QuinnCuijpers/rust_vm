@@ -50,7 +50,7 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
             "INC" | "DEC" => {
                 let ops = extract_n_operands(1, &mut operands, line)?;
                 let [r1] = ops.as_slice() else {
-                    return Err(ParserError::MissingOperand(line.to_string()).into());
+                    return Err(ParserError::TooManyOperands(line.to_string()).into());
                 };
                 if instruction == "INC" {
                     out.push(parse_instruction("ADI").unwrap().to_string());
@@ -65,7 +65,7 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
             "JMP" | "CAL" => {
                 let ops = extract_n_operands(1, &mut operands, line)?;
                 let [addr] = ops.as_slice() else {
-                    return Err(ParserError::MissingOperand(line.to_string()).into());
+                    return Err(ParserError::TooManyOperands(line.to_string()).into());
                 };
                 out.push(parse_instruction(&instruction).unwrap().to_string());
                 out.push(Bits::<2>::from_str("00").unwrap().to_string());
@@ -74,7 +74,7 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
             "CMP" => {
                 let ops = extract_n_operands(2, &mut operands, line)?;
                 let [r1, r2] = ops.as_slice() else {
-                    return Err(ParserError::MissingOperand(line.to_string()).into());
+                    return Err(ParserError::TooManyOperands(line.to_string()).into());
                 };
                 // CMP rx ry -> SUB rx ry r0
                 out.push(parse_instruction("SUB").unwrap().to_string());
@@ -85,7 +85,7 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
             "MOV" | "LSH" | "NOT" => {
                 let ops = extract_n_operands(2, &mut operands, line)?;
                 let [r1, r2] = ops.as_slice() else {
-                    return Err(ParserError::MissingOperand(line.to_string()).into());
+                    return Err(ParserError::TooManyOperands(line.to_string()).into());
                 };
                 if instruction == "MOV" {
                     out.push(parse_instruction("ADD").unwrap().to_string());
@@ -118,7 +118,7 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
                         let immediate = format!("{immediate1} {immediate2}");
                         out.push(parse_immediate(immediate.to_string(), &mut symbols)?.to_string());
                     }
-                    _ => return Err(ParserError::MissingOperand(line.to_string()).into()),
+                    _ => return Err(ParserError::TooManyOperands(line.to_string()).into()),
                 }
             }
             "BRH" => {
@@ -139,7 +139,7 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
                     out.push("0000".to_string());
                     out.push(parse_register_string(write)?.to_string());
                 } else {
-                    return Err(ParserError::MissingOperand(line.to_string()).into());
+                    return Err(ParserError::TooManyOperands(line.to_string()).into());
                 }
             }
             "LOD" | "STR" => {
@@ -157,13 +157,13 @@ pub(crate) fn parse_program(file_path: impl AsRef<Path>) -> Result<()> {
                         out.push(parse_register_string(r2)?.to_string());
                         out.push(parse_offset(offset, &mut symbols)?.to_string());
                     }
-                    _ => return Err(ParserError::MissingOperand(line.to_string()).into()),
+                    _ => return Err(ParserError::TooManyOperands(line.to_string()).into()),
                 }
             }
             "ADD" | "SUB" | "AND" | "NOR" | "XOR" => {
                 let ops = extract_n_operands(3, &mut operands, line)?;
                 let [r1, r2, write] = ops.as_slice() else {
-                    return Err(ParserError::MissingOperand(line.to_string()).into());
+                    return Err(ParserError::TooManyOperands(line.to_string()).into());
                 };
                 out.push(parse_instruction(&instruction).unwrap().to_string());
                 out.push(parse_register_string(r1)?.to_string());

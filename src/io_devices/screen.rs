@@ -10,11 +10,11 @@
 use crate::{bits::Bits, io_devices::Device};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
-pub(crate) struct Screen {
-    pub(crate) current_x: usize,
-    pub(crate) current_y: usize,
-    pub(crate) buffer: [[bool; 32]; 32],
-    pub(crate) active: [[bool; 32]; 32],
+pub struct Screen {
+    pub current_x: usize,
+    pub current_y: usize,
+    pub buffer: [[bool; 32]; 32],
+    pub active: [[bool; 32]; 32],
 }
 
 impl Screen {

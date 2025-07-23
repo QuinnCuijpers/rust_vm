@@ -11,10 +11,10 @@ pub(crate) enum MemoryState {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct DataMemory {
+pub struct DataMemory {
     // TODO: find appropriate type alias
-    pub(crate) memory: [Bits<8>; MEMORY_SIZE], // 256 bytes of memory
-    pub(crate) enabled: bool,
+    pub memory: [Bits<8>; MEMORY_SIZE], // 256 bytes of memory
+    pub enabled: bool,
     state: MemoryState,
     write_buffer: Option<(MemoryAddress, Bits<8>)>,
 }
@@ -65,7 +65,7 @@ impl DataMemory {
         }
     }
 
-    pub fn set_state(&mut self, state: MemoryState) {
+    pub(crate) fn set_state(&mut self, state: MemoryState) {
         self.state = state;
     }
 }

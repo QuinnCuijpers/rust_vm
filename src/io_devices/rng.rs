@@ -2,7 +2,7 @@ use crate::{bits::Bits, io_devices::Device, MemoryAddress};
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub(crate) struct RNG {
+pub struct RNG {
     seed: Bits<8>,
     state: Bits<8>,
 }

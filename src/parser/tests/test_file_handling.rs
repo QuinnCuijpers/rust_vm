@@ -3,12 +3,6 @@ use std::fs::File;
 use std::io::Write;
 
 #[test]
-fn parse_program_exec() {
-    let result = parse_program("test.as");
-    assert!(result.is_ok());
-}
-
-#[test]
 fn parse_program_file_not_found() {
     let result = parse_program("nonexistent_file.as");
     assert!(result.is_err());

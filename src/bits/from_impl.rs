@@ -68,7 +68,9 @@ impl<const N: usize> FromStr for Bits<N> {
             return Ok(Bits::try_from_signed_number(s.parse::<i64>()?)?);
         }
 
-        let s = s.strip_prefix("0b").unwrap_or(s);
+        if let Some(stripped) = s.strip_prefix("0b") {
+            return Bits::from_str_binary(stripped);
+        }
 
         match s.len() {
             len if len > N => {
