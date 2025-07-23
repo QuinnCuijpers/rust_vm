@@ -59,28 +59,40 @@ impl_from_bits_unsigned!(u8, u16, u32, u64, usize);
 impl_from_bits_signed!(i8, i16, i32, i64, isize);
 
 impl<const N: usize> FromStr for Bits<N> {
-    type Err = crate::bits::BitsParseError;
+    type Err = crate::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut bits = [false; N];
+
+        if s.starts_with("-") {
+            return Ok(Bits::try_from_signed_number(s.parse::<i64>()?)?);
+        }
+
+        let s = s.strip_prefix("0b").unwrap_or(s);
 
         match s.len() {
             len if len > N => {
                 return Err(crate::bits::BitsParseError::Length {
                     expected: N,
                     found: len,
-                });
+                    string: s.to_string(),
+                }
+                .into());
             }
             len if len < N => {
                 let num = s
                     .parse::<u64>()
-                    .map_err(|e| crate::bits::BitsParseError::Number { source: e })?;
+                    .map_err(|e| crate::bits::BitsParseError::Number {
+                        source: e,
+                        num: s.to_string(),
+                    })?;
 
                 if num >= (1 << N) {
                     return Err(crate::bits::BitsParseError::OutOfBounds {
                         value: num as usize,
                         max: (1 << N) - 1,
-                    });
+                    }
+                    .into());
                 }
 
                 bits.iter_mut().enumerate().for_each(|(i, b)| {
@@ -95,7 +107,8 @@ impl<const N: usize> FromStr for Bits<N> {
                         _ => {
                             return Err(crate::bits::BitsParseError::Character {
                                 character: *c as char,
-                            })
+                            }
+                            .into());
                         }
                     };
                 }

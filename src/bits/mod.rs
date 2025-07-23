@@ -47,6 +47,28 @@ impl<const N: usize> Bits<N> {
         out
     }
 
+    pub fn try_from_signed_number<T>(value: T) -> Result<Self, super::BitsParseError>
+    where
+        T: Into<i64> + Copy,
+    {
+        let val_i64: i64 = value.into();
+
+        if val_i64 < -(1 << (N - 1)) || val_i64 >= (1 << (N - 1)) {
+            return Err(super::BitsParseError::OutOfBounds {
+                value: val_i64 as usize,
+                max: (1 << (N - 1)) - 1,
+            });
+        }
+
+        let mut res = [false; N];
+        let val_u64 = val_i64 as u64;
+        res.iter_mut()
+            .enumerate()
+            .for_each(|(i, b)| *b = ((val_u64 >> i) & 1) != 0);
+
+        Ok(Bits { bit_array: res })
+    }
+
     pub fn try_from_unsigned_number<T>(value: T) -> Result<Self, super::BitsParseError>
     where
         T: Into<u64> + Copy,

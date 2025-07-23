@@ -27,18 +27,23 @@ fn bits_parse_error_display() {
     let error = BitsParseError::Length {
         expected: 4,
         found: 5,
+        string: "10101".to_string(),
     };
-    assert_eq!(error.to_string(), "Invalid length: expected 4, found 5");
+    assert_eq!(
+        error.to_string(),
+        "Invalid length: expected 4, found 5 (input: 10101)"
+    );
 
     let error = BitsParseError::Character { character: 'x' };
     assert_eq!(error.to_string(), "Invalid character: 'x'");
 
     let error = BitsParseError::Number {
         source: "invalid".parse::<u32>().unwrap_err(),
+        num: "invalid".to_string(),
     };
     assert_eq!(
         error.to_string(),
-        "Invalid number: invalid digit found in string"
+        "Invalid number: invalid digit found in string (input: invalid)"
     );
 
     let error = BitsParseError::OutOfBounds { value: 16, max: 15 };
