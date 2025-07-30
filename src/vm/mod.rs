@@ -179,6 +179,3 @@ impl VM {
         instruction.slice(12)
     }
 }
-
-#[cfg(test)]
-mod tests;

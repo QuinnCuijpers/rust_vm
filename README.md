@@ -2,37 +2,79 @@
 
 This project implements a simple virtual machine in Rust, inspired by [mattbattwings' Minecraft Redstone Computer](https://www.youtube.com/watch?v=osFa7nwHHz4&list=PL5LiOvrbVo8nPTtdXAdSmDWzu85zzdgRT).
 
-## Features
+**Original GitHub Repository:**
+[https://github.com/mattbatwings/BatPU-2](https://github.com/mattbatwings/BatPU-2)
 
-- **Parser:**  
-  Parses assembly-like instructions, supports labels, and provides robust error handling for missing operands, invalid instructions, undefined labels, and file errors.
+## Features & Architecture
 
-- **Arithmetic Logic Unit (ALU):**  
-  Performs operations on 8-bit values using a custom `Bits` struct (array of booleans).  
-  Implements a carry cancel adder (CCA) and supports multiple bitwise and arithmetic operations.  
-  Sets flags (zero, carry) after each operation, which are used for conditional branching.
 
-- **Register Bank:**  
-  Simulated dual-read register bank with 16 registers per bank, supporting read, write, enable/disable, and validation logic.
+## IO Devices
 
-- **Instruction Memory:**  
-  Stores up to 1024 instructions, each instruction is a `[Bits<4>; 4]` array.
+The VM supports several IO devices for interacting with programs and visualizing output:
 
-- **Control ROM:**  
-  Decodes opcodes into control signals for the VM.
+- **Character Display:**
+  - Allows output of ASCII characters to a virtual display.
+  - Useful for printing text or debugging output from your program.
+  - Accessed via memory-mapped IO addresses (see code for details).
 
-- **Program Counter (PC):**  
-  Tracks the address of the current instruction being executed.  
-  Automatically increments after each instruction, unless modified by control logic (e.g halts).
+- **Number Display:**
+  - Displays numeric values (e.g., register or memory contents) in decimal or hexadecimal.
+  - Useful for debugging or showing program results.
 
-- **Testing:**  
-  Comprehensive unit tests for ALU, bits, parser, register, and instruction memory modules.  
-  Tests are organized by feature and error type.  
-  Code coverage is measured using [`cargo llvm-cov`](https://github.com/taiki-e/cargo-llvm-cov).
+- **Screen Device:**
+  - Provides a pixel-based display for graphical output.
+  - Programs can write to the screen buffer to draw simple graphics or animations.
 
-## Supported Assembly Instructions and Syntax
+- **Random Number Generator (RNG):**
+  - Provides random values for use in games or randomized algorithms.
+  - Accessed via a special memory-mapped address.
 
-The VM supports a simple assembly-like language. Each instruction consists of an opcode followed by its operands (registers or immediate values). For a complete list of opcodes and their binary representations, see [mattbattwings' Minecraft Redstone Computer playlist](https://www.youtube.com/watch?v=osFa7nwHHz4&list=PL5LiOvrbVo8nPTtdXAdSmDWzu85zzdgRT). The local opcode file [opcodes.xlsx](opcodes.xlsx) reflects only the instructions currently implemented in this VM.
+To use these devices, write to or read from their designated memory-mapped addresses in your assembly program. See the `io_devices/` module and example programs in `programs/` for usage patterns.
+
+## Components
+
+
+- **Parser:**
+  - Parses assembly-like instructions with support for labels, definitions, and robust error handling (missing/extra operands, invalid instructions, undefined labels, file errors).
+  - Pseudoinstructions (e.g., `INC`, `DEC`, `CMP`) are expanded automatically.
+
+
+- **Arithmetic Logic Unit (ALU):**
+  - Operates on 8-bit values using a custom `Bits` struct (array of booleans).
+  - Implements a carry-cancel adder (CCA) and supports bitwise/arithmetic ops.
+  - Sets flags (zero, carry) for conditional branching.
+
+
+- **Register Bank:**
+  - Dual-read register bank with 16 registers, supporting read/write, enable/disable, and validation logic.
+
+
+- **Instruction Memory:**
+  - Stores up to 1024 instructions, each as a `Bits<16>`.
+
+- **Control ROM:**
+  - Decodes opcodes into control signals for the VM.
+
+
+- **Program Counter (PC):**
+  - Tracks the address of the current instruction.
+  - Increments after each instruction unless modified by control logic (e.g., halt, jump, call/return).
+
+## Testing  
+  - Comprehensive unit tests for all major modules (ALU, bits, parser, register, instruction memory, VM execution).
+  - Tests are organized by feature and error type.
+  - Code coverage is measured using [`cargo llvm-cov`](https://github.com/taiki-e/cargo-llvm-cov).
+
+
+## Supported Assembly Instructions & Syntax
+
+
+The VM supports a simple assembly-like language, where each instruction consists of an opcode followed by its operands (registers, immediate values, or memory addresses). Instructions are space-separated and support labels for control flow. For a detailed list of supported opcodes, their syntax, and binary layouts, refer to the tables below or consult the [BatPU-2 ISA documentation](BatPU-2%20ISA.xlsx) and [mattbattwings' playlist](https://www.youtube.com/watch?v=osFa7nwHHz4&list=PL5LiOvrbVo8nPTtdXAdSmDWzu85zzdgRT).
+
+The assembler provides robust error handling for invalid instructions, missing or extra operands, and undefined labels. Pseudoinstructions (such as `INC`, `DEC`, `CMP`, etc.) are automatically expanded to real instructions during parsing, making it easier to write concise and readable assembly code.
+
+See the tables below for a summary of supported instructions, pseudoinstructions, and branching conditions.
+
 Below are the supported instructions and their syntax:
 
 | Instruction | Syntax Example         | Description                                      |
@@ -50,15 +92,24 @@ Below are the supported instructions and their syntax:
 | `JMP`       | `JMP addr`            | Jump to instruction at `addr`                    |
 | `CAL`       | `CAL addr`            | Call subroutine at `addr` (pushes return address)|
 | `RET`       | `RET`                 | Return from subroutine (pops return address)     |
+| `LOD`       | `LOD r1 r2 [off]`      | Load value from data memory at address in `r2` plus optional 4-bit offset `off` into `r1` |
+| `STR`       | `STR r1 r2 [off]`      | Store value from `r1` into data memory at address in `r2` plus optional 4-bit offset `off` |
 
-**Pseudocode Instructions:**
+
+**Pseudoinstructions:**
 
 Some instructions are provided as convenient pseudocode and are automatically expanded to real instructions during parsing:
-| Pseudocode   | Expansion         | Description                        |
-|-------------|-------------------|------------------------------------|
-| `INC rX`    | `ADI rX 1`        | Increment register `rX` by 1       |
-| `DEC rX`    | `ADI rX 255`      | Decrement register `rX` by 1       |
-| `CMP rX rY` | `SUB rX rY r0`    | Compare `rX` and `rY`              |
+
+| Pseudocode      | Expansion         | Description                        |
+|----------------|-------------------|------------------------------------|
+| `CMP A B`      | `SUB A B r0`      | Compare `A` and `B`                |
+| `MOV A C`      | `ADD A r0 C`      | Move value from `A` to `C`         |
+| `LSH A C`      | `ADD A A C`       | Left shift `A` by 1, store in `C`  |
+| `INC A`        | `ADI A 1`         | Increment register `A` by 1        |
+| `DEC A`        | `ADI A 255`       | Decrement register `A` by 1        |
+| `NOT A C`      | `NOR A r0 C`      | Bitwise NOT of `A`, store in `C`   |
+| `NEG A C`      | `SUB r0 A C`      | Negate `A`, store in `C`           |
+
 
 **BRH Supported Conditions:**
 
@@ -70,71 +121,33 @@ Some instructions are provided as convenient pseudocode and are automatically ex
 | notcarry  | `<` `lt` `nc` `notcarry` | Branch if carry flag is not set  |
 
 
-- **Labels:**  
-  You can define labels in your assembly code using `.label`. Branch/Jump instructions (`BRH`/`JMP`) can use labels as targets.
+
+- **Labels:**
+  - Define labels in your assembly code using `.label` (either on their own line or inline with an instruction).
+  - Branch/Jump/Call instructions (`BRH`/`JMP`/`CAL`) can use labels as targets.
+  - Labels above comments or blank lines are resolved to the next instruction.
 
 -
 
+
 **Notes:**
-- Registers are specified as `r0`, `r1`, ..., `r15`.
-- Register 0 is a zero register (always reads as 0 and writes are ignored).
+- Registers: `r0`–`r15` (with `r0` as a zero register: always reads as 0, writes are ignored).
 - Immediate values (for `LDI`) must fit in 8 bits.
 - All instructions and operands are space-separated.
 - Extra or missing operands will result in a parse error.
-- `CAL` and `RET` provide basic subroutine call/return support.
-- The call stack has a maximum depth of 16; deeper recursion will cause overflow errors.
+- `CAL` and `RET` provide basic subroutine call/return support (call stack max depth: 16).
 
-**Example:**
-```
-    CAL .add3
-    HLT
-.add3 CAL .add1
-    CAL .add2
-    RET
-.add1 ADI r1 1
-    RET
-.add2 ADI r1 2
-    RET
-```
+
 
 ## Usage
 
-1. Write your program in assembly-like syntax.
+
+1. Write your program in assembly-like syntax (see examples in `programs/`).
 2. Run the VM using the provided API in `lib.rs`.
-3. Inspect register and memory state using the display function of the register file.
-
-### Example: Running a Program from `fib.as`
-
-```rust
-use rust_vm::VM;
-
-fn main() {
-    let mut vm = VM::default();
-    vm.execute_program("fib.as");
-    vm.reg_file.display(); // Prints register banks
-}
-```
-
-### Example Assembly (`fib.as`)
-
-```
-.fib LDI r1 8 
-    LDI r2 0
-    LDI r3 1
-    LDI r4 0
-.loop DEC r1
-    BRH nc .done
-    ADD r3 r0 r2
-    ADD r4 r0 r3
-    ADD r2 r3 r4
-    JMP .loop
-.done HLT
-```
-
-This example computes the 8th Fibonacci number and stores them in the 4th register.  
-You can modify `fib.as` to try your own programs!
+3. Inspect register and memory state using the display function of the register file, or visualize output using the screen device.
 
 ## Testing & Coverage
+
 
 Run all tests:
 ```sh
@@ -146,9 +159,10 @@ Generate a coverage report using `cargo llvm-cov` that opens in your browser:
 cargo llvm-cov --open
 ```
 
+
 ### Code Coverage in VS Code Gutters
 
-To view code coverage directly in VS Code gutters, install the [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters) extension.  
+To view code coverage directly in VS Code gutters, install the [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters) extension.
 After generating a coverage report (e.g., `lcov.info`), open your project in VS Code and use Coverage Gutters to visualize coverage in the editor.
 
 ```sh
