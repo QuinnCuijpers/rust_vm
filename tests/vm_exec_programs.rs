@@ -149,27 +149,27 @@ fn vm_program_number_display() {
     let mut vm = VM::default();
     vm.execute_program("tests/test_programs/test_number_display1.as")
         .unwrap();
-    assert_eq!(vm.io_devices.number_display.display(), "200");
+    assert_eq!(vm.io_devices.number_display.get_display_val(), "200");
 
     vm.execute_program("tests/test_programs/test_number_display2.as")
         .unwrap();
-    assert_eq!(vm.io_devices.number_display.display(), "201");
+    assert_eq!(vm.io_devices.number_display.get_display_val(), "201");
 
     vm.execute_program("tests/test_programs/test_number_display3.as")
         .unwrap();
-    assert_eq!(vm.io_devices.number_display.display(), "-55");
+    assert_eq!(vm.io_devices.number_display.get_display_val(), "-55");
 
     vm.execute_program("tests/test_programs/test_number_display4.as")
         .unwrap();
-    assert_eq!(vm.io_devices.number_display.display(), "201");
+    assert_eq!(vm.io_devices.number_display.get_display_val(), "201");
 
     vm.execute_program("tests/test_programs/test_number_display5.as")
         .unwrap();
-    assert_eq!(vm.io_devices.number_display.display(), "0");
+    assert_eq!(vm.io_devices.number_display.get_display_val(), "0");
 
     vm.execute_program("tests/test_programs/test_number_display6.as")
         .unwrap();
-    assert_eq!(vm.io_devices.number_display.display(), "202");
+    assert_eq!(vm.io_devices.number_display.get_display_val(), "202");
 }
 
 #[test]
@@ -191,4 +191,29 @@ fn vm_program_screen() {
             assert!(!pixel, "Expected all pixels to be false");
         }
     }
+}
+
+#[test]
+fn logo() {
+    let mut vm = VM::new();
+    vm.execute_program("tests/test_programs/logo.as").unwrap();
+}
+
+#[test]
+fn gol_init() {
+    let mut vm = VM::new();
+    vm.execute_program("tests/test_programs/gol_init.as")
+        .unwrap();
+    vm.reg_file.display();
+    println!();
+    vm.data_memory.display();
+    vm.io_devices.screen.display_buffer();
+}
+
+#[test]
+fn hello_char() {
+    let mut vm = VM::new();
+    vm.execute_program("tests/test_programs/hello_char.as")
+        .unwrap();
+    vm.io_devices.character_display.display();
 }

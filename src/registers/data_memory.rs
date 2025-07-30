@@ -41,9 +41,10 @@ impl Register for DataMemory {
     }
 
     fn clock(&mut self) {
-        if self.enabled {
+        if self.enabled && self.state == MemoryState::Write {
             let Some((address, data)) = self.write_buffer.take() else {
-                return; // No write scheduled
+                self.write_buffer = None; // No write scheduled
+                return;
             };
             self.memory[address.to_usize()] = data;
         } else {

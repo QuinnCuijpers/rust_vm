@@ -30,6 +30,14 @@ impl CharacterDisplay {
             active: String::with_capacity(BUFFER_SIZE),
         }
     }
+
+    pub fn display(&self) {
+        println!("Character Display: {}", self.active);
+    }
+
+    pub fn buffer_display(&self) {
+        println!("Character Buffer: {}", self.buffer);
+    }
 }
 
 impl Device for CharacterDisplay {

@@ -24,7 +24,8 @@ const PORTNAMES: [&str; 16] = [
 ];
 
 pub(super) fn parse_register_string(s: &str) -> Result<Bits<4>> {
-    if s.len() < 2 || !s.starts_with('r') {
+    let s_lower = s.to_lowercase();
+    if s_lower.len() < 2 || !s_lower.starts_with('r') {
         return Err(ParserError::InvalidInstruction(s.to_string()).into());
     }
     let num_s = &s[1..];

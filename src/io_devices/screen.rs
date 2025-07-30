@@ -46,12 +46,15 @@ impl Device for Screen {
         let val = bot_5.to_usize();
         if val < 32 {
             match addr.to_usize() {
-                240 => self.current_x = val,                               // set Pixel X
-                241 => self.current_y = val,                               // set Pixel Y
-                242 => self.buffer[self.current_y][self.current_x] = true, // Draw pixel
+                240 => self.current_x = val, // set Pixel X
+                241 => self.current_y = val, // set Pixel Y
+                242 => {
+                    self.buffer[self.current_y][self.current_x] = true;
+                    // self.display_buffer();
+                } // Draw pixel
                 243 => self.buffer[self.current_y][self.current_x] = false, // Clear pixel
-                245 => self.active = self.buffer,                          // Buffer screen
-                246 => self.buffer = [[false; 32]; 32],                    // Clear screen buffer
+                245 => self.active = self.buffer, // Buffer screen
+                246 => self.buffer = [[false; 32]; 32], // Clear screen buffer
                 _ => {}
             }
         }
@@ -60,11 +63,46 @@ impl Device for Screen {
 
 impl Screen {
     pub fn display(&self) {
+        // Top border
+        print!("+");
+        for _ in 0..32 {
+            print!("-");
+        }
+        println!("+");
         for row in self.active.iter().rev() {
+            print!("|");
             for &pixel in row {
                 print!("{}", if pixel { "█" } else { " " });
             }
-            println!();
+            println!("|");
         }
+        // Bottom border
+        print!("+");
+        for _ in 0..32 {
+            print!("-");
+        }
+        println!("+");
+    }
+
+    pub fn display_buffer(&self) {
+        // Top border
+        print!("+");
+        for _ in 0..32 {
+            print!("-");
+        }
+        println!("+");
+        for row in self.buffer.iter().rev() {
+            print!("|");
+            for &pixel in row {
+                print!("{}", if pixel { "█" } else { " " });
+            }
+            println!("|");
+        }
+        // Bottom border
+        print!("+");
+        for _ in 0..32 {
+            print!("-");
+        }
+        println!("+");
     }
 }

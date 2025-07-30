@@ -125,7 +125,14 @@ impl VM {
 
         let immediate = match control_signals.immediate_mux {
             ImmediateMux::Immediate => instruction.slice(0),
-            ImmediateMux::Offset => instruction.slice::<4>(0).resize::<8>(),
+            ImmediateMux::Offset => {
+                let offset = instruction.slice::<4>(0).to_signed(); // signed offset from -8 to 7
+                if offset < 0 {
+                    Bits::from((256isize + offset) as u8) // Convert negative offset to unsigned
+                } else {
+                    Bits::from(offset as u8) // Positive offset
+                }
+            }
         };
 
         let alu_input_b = match control_signals.alu_mux {
@@ -140,7 +147,12 @@ impl VM {
             DataMux::Memory => {
                 if alu_result >= Bits::from(240u8) {
                     // If the ALU result is an I/O address, read from the corresponding device
-                    self.io_devices.on_read(alu_result)
+                    if control_signals.memory_access == MemoryAccess::Read {
+                        // Read from the I/O device
+                        self.io_devices.on_read(alu_result)
+                    } else {
+                        unreachable!("attempted to load value from memory without read access")
+                    }
                 } else {
                     // Otherwise, read from the data memory
                     self.data_memory.read(alu_result)
@@ -149,7 +161,9 @@ impl VM {
         };
         if alu_result >= Bits::from(240u8) {
             // If the ALU result is an I/O address, write to the corresponding device
-            self.io_devices.on_write(alu_result, b);
+            if control_signals.memory_access == MemoryAccess::Write {
+                self.io_devices.on_write(alu_result, b);
+            }
         } else {
             // Otherwise, write to the data memory
             self.data_memory.schedule_write((alu_result, b));
@@ -160,8 +174,9 @@ impl VM {
             DestMux::Second => instruction.slice(4),
             DestMux::Third => instruction.slice(0),
         };
-
-        self.reg_file.schedule_write((write_address, data));
+        if !(control_signals.memory_access == MemoryAccess::Write) {
+            self.reg_file.schedule_write((write_address, data));
+        }
 
         self.pc.value = next_pc;
     }
@@ -179,3 +194,6 @@ impl VM {
         instruction.slice(12)
     }
 }
+
+#[cfg(test)]
+mod tests;

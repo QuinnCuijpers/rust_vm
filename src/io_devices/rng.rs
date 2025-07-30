@@ -9,10 +9,11 @@ pub struct RNG {
 
 impl Default for RNG {
     fn default() -> Self {
-        RNG {
-            seed: Bits::from(0xACu8),
-            state: Bits::from(0xACu8),
+        let mut seed = Bits::from(rand::random::<u8>());
+        while seed == Bits::from(0u8) {
+            seed = Bits::from(rand::random::<u8>());
         }
+        RNG { seed, state: seed }
     }
 }
 

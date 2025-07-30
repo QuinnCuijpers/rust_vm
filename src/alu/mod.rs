@@ -92,8 +92,11 @@ impl Alu {
             }
         }
         let res = Bits::from(res);
-        self.flags.set_zero(res == Bits::from(0u8));
-        self.flags.set_carry(carry[N] == Signal::Generate);
+        if self.set_flags {
+            self.flags.set_zero(res == Bits::from(0u8));
+            self.flags.set_carry(carry[N] == Signal::Generate);
+        }
+
         res
     }
 

@@ -28,7 +28,11 @@ impl NumberDisplay {
         }
     }
 
-    pub fn display(&self) -> String {
+    pub fn display(&self) {
+        println!("Number Display: {}", self.get_display_val());
+    }
+
+    pub fn get_display_val(&self) -> String {
         if !self.active {
             return "0".to_string();
         }

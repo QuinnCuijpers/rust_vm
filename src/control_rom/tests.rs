@@ -78,7 +78,7 @@ fn rshift() {
         ControlSignals {
             alu_settings: AluSettings::Rshift,
             reg_file_enable: true,
-            set_flags: true,
+            set_flags: false,
             ..Default::default()
         }
     );

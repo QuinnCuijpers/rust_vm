@@ -122,7 +122,7 @@ impl ControlRom {
             "0111" => ControlSignals {
                 alu_settings: AluSettings::Rshift,
                 reg_file_enable: true,
-                set_flags: true, // Change from original design, RSH should set flags
+                set_flags: false, // as per original design, RSH should not set flags
                 ..Default::default()
             },
             // LDI
