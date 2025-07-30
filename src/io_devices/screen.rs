@@ -57,3 +57,14 @@ impl Device for Screen {
         }
     }
 }
+
+impl Screen {
+    pub fn display(&self) {
+        for row in self.active.iter().rev() {
+            for &pixel in row {
+                print!("{}", if pixel { "█" } else { " " });
+            }
+            println!();
+        }
+    }
+}

@@ -20,7 +20,7 @@ pub struct VM {
     pub reg_file: RegisterFile,
     control_rom: ControlRom,
     instruction_memory: InstructionMemory,
-    pc: PC,
+    pub pc: PC,
     call_stack: CallStack,
     pub data_memory: DataMemory,
     pub io_devices: IoDevices,
@@ -72,7 +72,6 @@ impl VM {
     fn process_instruction(&mut self, instruction: ProgramInstruction) {
         let opcode = instruction.slice(12);
         let control_signals = self.control_rom.get_control_signals(opcode);
-
         self.call_stack.state = control_signals.call_stack_state;
         self.reg_file.enable(control_signals.reg_file_enable);
         self.alu.set_setting(control_signals.alu_settings);
@@ -167,7 +166,7 @@ impl VM {
         self.pc.value = next_pc;
     }
 
-    fn clock(&mut self) -> OpCode {
+    pub fn clock(&mut self) -> OpCode {
         let instr_adr = self.pc.clock().to_usize();
         if instr_adr >= self.instruction_memory.instructions.len() {
             return OPCODE_HLT;
@@ -180,3 +179,6 @@ impl VM {
         instruction.slice(12)
     }
 }
+
+#[cfg(test)]
+mod tests;

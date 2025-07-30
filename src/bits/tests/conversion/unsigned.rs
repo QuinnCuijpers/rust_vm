@@ -8,6 +8,12 @@ fn to_usize() {
 }
 
 #[test]
+fn to_usize_0() {
+    let bits = Bits::<8>::from(0u8);
+    assert_eq!(bits.to_usize(), 0);
+}
+
+#[test]
 fn u8_conversion() {
     let bits = Bits::<8>::from(0b1010_1010u8);
     assert_eq!(

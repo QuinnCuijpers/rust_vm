@@ -1,9 +1,9 @@
 use crate::{bits::Bits, MemoryAddress};
 
-mod character_display;
-mod number_display;
-mod rng;
-mod screen;
+pub mod character_display;
+pub mod number_display;
+pub mod rng;
+pub mod screen;
 
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct IoDevices {
@@ -49,7 +49,7 @@ mod test {
         let seed = Bits::from(0xACu8);
         let mut rng = RNG::new(seed);
         for i in 0..10 {
-            let next = rng.next();
+            let next = rng.generate_next();
             assert!(
                 next > Bits::from(0u8),
                 "RNG output should be greater than 0"

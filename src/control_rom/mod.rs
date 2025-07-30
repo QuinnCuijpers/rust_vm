@@ -186,8 +186,7 @@ impl ControlRom {
                 memory_access: MemoryAccess::Write,
                 ..Default::default()
             },
-            #[allow(clippy::panic)]
-            _ => panic!("Not yet implemented"), //eventually unreachable
+            _ => unreachable!(),
         }
     }
 }

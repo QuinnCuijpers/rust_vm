@@ -13,7 +13,7 @@ type RegisterIndex = Bits<4>;
 pub struct RegisterFile {
     pub register_banks: [RegisterBank; 2], // Two sets of 16 registers, for simulated dual read
     enabled: bool,
-    write_buffer: Option<(RegisterIndex, Immediate)>,
+    pub(crate) write_buffer: Option<(RegisterIndex, Immediate)>,
     read_addresses: [RegisterIndex; 2],
     pub read_outputs: [DataRegister; 2],
 }
@@ -62,6 +62,8 @@ impl Register for RegisterFile {
                     }
                 }
             }
+        } else {
+            self.write_buffer = None; // Clear the write buffer
         }
     }
 

@@ -22,7 +22,7 @@ impl RNG {
         Self { seed, state: seed }
     }
 
-    pub fn next(&mut self) -> Bits<8> {
+    pub fn generate_next(&mut self) -> Bits<8> {
         // Linear shift generator algorithm
         let mut lfsr = self.state;
         let bit = ((lfsr >> Bits::from(7u8))
@@ -38,7 +38,7 @@ impl RNG {
 
 impl Device for RNG {
     fn on_read(&mut self, _addr: MemoryAddress) -> Bits<8> {
-        self.next()
+        self.generate_next()
     }
 
     fn on_write(&mut self, _addr: MemoryAddress, _value: Bits<8>) {} // RNG does not support writing

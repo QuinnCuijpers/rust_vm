@@ -46,6 +46,8 @@ impl Register for DataMemory {
                 return; // No write scheduled
             };
             self.memory[address.to_usize()] = data;
+        } else {
+            self.write_buffer = None; // Clear the write buffer if not enabled
         }
     }
 
@@ -67,5 +69,18 @@ impl DataMemory {
 
     pub(crate) fn set_state(&mut self, state: MemoryState) {
         self.state = state;
+    }
+
+    pub fn display(&self) {
+        for (i, byte) in self.memory.iter().enumerate() {
+            if i % 16 == 0 {
+                if i > 0 {
+                    println!();
+                }
+                print!("{i:04x}: ");
+            }
+            print!("{} ", byte.to_usize());
+        }
+        println!();
     }
 }

@@ -6,7 +6,7 @@ pub mod bits;
 mod control_rom;
 mod error;
 mod instruction_memory;
-mod io_devices;
+pub mod io_devices;
 mod parser;
 mod program_counter;
 pub mod registers;
