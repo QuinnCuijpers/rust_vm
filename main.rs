@@ -19,13 +19,17 @@ fn main() {
     // completed programs:
     // vm.load_program("programs/dvd.as").unwrap();
     // vm.load_programs("programs/gol.as").unwrap();
+    // vm.load_program("programs/maze.as").unwrap();
+
+    //working, but waiting for character display:
+    // vm.load_program("programs/helloworld.as").unwrap();
 
     // working screen programs:
     // vm.load_program("programs/calculator.as").unwrap();
     // vm.load_program("programs/2048.as").unwrap();
     // vm.load_program("programs/connect4.as").unwrap();
 
-    vm.load_program("programs/dvd.as").unwrap();
+    vm.load_program("programs/maze.as").unwrap();
 
     let mut buffer: Vec<u32> = vec![0; WINDOW_WIDTH * WINDOW_HEIGHT];
     let width = WINDOW_WIDTH;
@@ -42,16 +46,28 @@ fn main() {
         .expect("Unable to create window");
 
     window.set_target_fps(60);
+
+    let mut is_halted = false;
     // Main loop
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        for _ in 0..TICKS_PER_FRAME {
-            vm.clock();
+        if !is_halted {
+            for _ in 0..TICKS_PER_FRAME {
+                if vm.clock() == rust_vm::OPCODE_HLT {
+                    is_halted = true;
+                    break;
+                }
+            }
         }
+
+        handle_controller_input(&mut vm, &window);
 
         screen_to_buffer_with_hud(vm.io_devices.screen, &mut buffer[..]);
 
         // Update the window with the buffer
         window.update_with_buffer(&buffer, width, height).unwrap();
+
+        vm.io_devices.character_display.display();
+        vm.io_devices.number_display.display();
     }
 }
 
@@ -80,4 +96,19 @@ fn screen_to_buffer_with_hud(screen: Screen, buffer: &mut [u32]) {
             }
         }
     }
+}
+
+fn handle_controller_input(vm: &mut rust_vm::VM, window: &Window) {
+    vm.io_devices
+        .controller
+        .set_up(window.is_key_down(Key::Up) || window.is_key_down(Key::W));
+    vm.io_devices
+        .controller
+        .set_down(window.is_key_down(Key::Down) || window.is_key_down(Key::S));
+    vm.io_devices
+        .controller
+        .set_left(window.is_key_down(Key::Left) || window.is_key_down(Key::A));
+    vm.io_devices
+        .controller
+        .set_right(window.is_key_down(Key::Right) || window.is_key_down(Key::D));
 }

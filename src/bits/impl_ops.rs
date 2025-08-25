@@ -123,12 +123,24 @@ impl<const N: usize> Index<usize> for Bits<N> {
 
 impl<const N: usize> PartialOrd for Bits<N> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.to_usize().cmp(&other.to_usize()))
+        Some(self.cmp(other))
     }
 }
 
 impl<const N: usize> Ord for Bits<N> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.to_usize().cmp(&other.to_usize())
+    }
+}
+
+impl<const N: usize> std::ops::BitOrAssign for Bits<N> {
+    fn bitor_assign(&mut self, rhs: Self) {
+        *self = *self | rhs;
+    }
+}
+
+impl<const N: usize> std::ops::BitAndAssign for Bits<N> {
+    fn bitand_assign(&mut self, rhs: Self) {
+        *self = *self & rhs;
     }
 }

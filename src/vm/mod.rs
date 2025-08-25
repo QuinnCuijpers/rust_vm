@@ -10,10 +10,6 @@ use crate::{
 };
 use std::path::Path;
 
-const OPCODE_HLT: Bits<4> = Bits {
-    bit_array: [true, false, false, false],
-};
-
 #[derive(Debug, Default)]
 pub struct VM {
     alu: Alu,
@@ -51,7 +47,7 @@ impl VM {
     pub fn execute_program(&mut self, file_path: impl AsRef<Path>) -> crate::Result<()> {
         let file_path = file_path.as_ref();
         self.load_program(file_path)?;
-        while self.clock() != OPCODE_HLT {}
+        while self.clock() != crate::OPCODE_HLT {}
         Ok(())
     }
 
@@ -184,7 +180,7 @@ impl VM {
     pub fn clock(&mut self) -> OpCode {
         let instr_adr = self.pc.clock().to_usize();
         if instr_adr >= self.instruction_memory.instructions.len() {
-            return OPCODE_HLT;
+            return crate::OPCODE_HLT;
         }
         let instruction = self.instruction_memory.instructions[instr_adr];
         self.process_instruction(instruction);

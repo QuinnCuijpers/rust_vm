@@ -1,6 +1,7 @@
 use crate::{bits::Bits, MemoryAddress};
 
 pub mod character_display;
+pub mod controller;
 pub mod number_display;
 pub mod rng;
 pub mod screen;
@@ -11,13 +12,16 @@ pub struct IoDevices {
     pub number_display: number_display::NumberDisplay,
     pub rng: rng::RNG,
     pub screen: screen::Screen,
+    pub controller: controller::Controller,
 }
 
 impl Device for IoDevices {
     fn on_read(&mut self, addr: MemoryAddress) -> Bits<8> {
         match addr.to_usize() {
-            244 => self.screen.on_read(addr), // Load Pixel
-            _ => Bits::default(),             // Default for other addresses
+            244 => self.screen.on_read(addr),     // Load Pixel
+            254 => self.rng.on_read(addr),        // RNG operations
+            255 => self.controller.on_read(addr), // Read Controller
+            _ => Bits::default(),                 // Default for other addresses
         }
     }
 
@@ -26,7 +30,6 @@ impl Device for IoDevices {
             240..=246 => self.screen.on_write(addr, value), // Screen operations
             247..=249 => self.character_display.on_write(addr, value), // Character Display operations
             250..=253 => self.number_display.on_write(addr, value),    // Number Display operations
-            254 => self.rng.on_write(addr, value),                     // RNG operations
             _ => {} // No operation for other addresses
         }
     }

@@ -19,6 +19,9 @@ pub(crate) type Immediate = Bits<8>;
 pub(crate) type Address = Bits<10>;
 pub(crate) type Condition = Bits<2>;
 pub(crate) type MemoryAddress = Bits<8>; // 8-bit address for 256 bytes of memory
+pub const OPCODE_HLT: Bits<4> = Bits {
+    bit_array: [true, false, false, false],
+};
 
 pub use crate::bits::Bits;
 pub use crate::bits::BitsParseError;
